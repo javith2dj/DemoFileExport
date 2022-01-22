@@ -11,11 +11,12 @@ codeunit 50100 "Export Invoice"
         XMLChildNodes: Dictionary of [Text, XmlElement];
         XMLParentNodes: array[10] of XmlElement;
         HeaderRecordRef: RecordRef;
+        InterfaceHdrRecord: Record "Interface Header";
 
     local procedure createxmlfile(SalesInvHeader: Record "Sales Invoice Header")
     var
-        ExportMapping: Record "Dyn. Export Buffer";
-        ExportMapping2: Record "Dyn. Export Buffer";
+        ExportMapping: Record "Interface Line";
+        ExportMapping2: Record "Interface Line";
         IntNamespace: Record "Interface Namespace/Prefix";
         ExpTextBuider: TextBuilder;
         HeaderFieldRef: FieldRef;
@@ -29,6 +30,7 @@ codeunit 50100 "Export Invoice"
         CurrNodeValue: Text;
         i: Integer;
     begin
+        InterfaceHdrRecord.Get('DEMO');
         XmlDocument.ReadFrom(GetInvoiceHeader(), XMLdocOut);
         XMLdocOut.GetRoot(RootNode);
 
@@ -39,20 +41,22 @@ codeunit 50100 "Export Invoice"
         if ExportMapping.FindSet() then
             repeat
                 if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Child Element" then begin
+                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element" then begin
                     Clear(XmlCurrNode);
-                    if ExportMapping."Source Type" = ExportMapping."Source Type"::Text then
-                        CurrNodeValue := ExportMapping.Source;
-                    if ExportMapping."Source Type" = ExportMapping."Source Type"::Field then begin
-                        HeaderFieldRef := HeaderRecordRef.Field(ExportMapping."Field No.");
-                        CurrNodeValue := HeaderFieldRef.Value;
-                    end;
+                    CurrNodeValue := ExportMapping.Source;
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
                     RootNode.Add(XmlCurrNode);
                 end;
-                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Parent Element" then begin
+                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
+                    Clear(XmlCurrNode);
+                    HeaderFieldRef := HeaderRecordRef.Field(ExportMapping."Field No.");
+                    CurrNodeValue := HeaderFieldRef.Value;
+                    XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
+                    RootNode.Add(XmlCurrNode);
+                end;
+                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Table Element" then begin
                     CreateParentElements(ExportMapping, RootNode);
-                end
+                end;
             until ExportMapping.Next() = 0;
         TempBLOB.CreateOutStream(outs);
         XMLdocOut.WriteTo(outs);
@@ -62,6 +66,8 @@ codeunit 50100 "Export Invoice"
     end;
 
     procedure GetInvoiceHeader(): Text;
+    var
+        PrefixBuilder: TextBuilder;
     begin
         exit('<?xml version="1.0" encoding="UTF-8" ?>' +
         '<Invoice xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 UBL-Invoice-2.0.xsd" ' +
@@ -73,9 +79,9 @@ codeunit 50100 "Export Invoice"
         'xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"/>');
     end;
 
-    procedure CreateParentElements(ExpMapping: Record "Dyn. Export Buffer"; var ParentNode: XmlElement)
+    procedure CreateParentElements(ExpMapping: Record "Interface Line"; var ParentNode: XmlElement)
     var
-        ExportMapping: Record "Dyn. Export Buffer";
+        ExportMapping: Record "Interface Line";
         TableLinkRec: Record "Interface Table Link";
         IntNamespace: Record "Interface Namespace/Prefix";
         TableLinkRecordRef: RecordRef;
@@ -105,16 +111,16 @@ codeunit 50100 "Export Invoice"
                     if ExportMapping.FindSet() then
                         repeat
                             if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Child Element" then begin
-                                if ExportMapping."Source Type" = ExportMapping."Source Type"::Text then
-                                    CurrNodeValue := ExportMapping.Source;
-                                if ExportMapping."Source Type" = ExportMapping."Source Type"::Field then begin
-                                    CurrNodeFieldRef := TableLinkRecordRef.Field(ExportMapping."Field No.");
-                                    CurrNodeValue := CurrNodeFieldRef.Value;
-                                end;
+                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
+                                CurrNodeFieldRef := TableLinkRecordRef.Field(ExportMapping."Field No.");
+                                CurrNodeValue := CurrNodeFieldRef.Value;
                                 XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
                             end;
-                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Parent Element" then begin
+                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element" then begin
+                                CurrNodeValue := ExportMapping.Source;
+                                XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                            end;
+                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Table Element" then begin
 
                                 CreateParentElements(ExportMapping, XmlCurrNode);
                             end
@@ -125,21 +131,32 @@ codeunit 50100 "Export Invoice"
             if ExportMapping.FindSet() then
                 repeat
                     if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Child Element" then begin
-                        if ExportMapping."Source Type" = ExportMapping."Source Type"::Text then
-                            CurrNodeValue := ExportMapping.Source;
-                        if ExportMapping."Source Type" = ExportMapping."Source Type"::Field then begin
-                            CurrNodeFieldRef := HeaderRecordRef.Field(ExportMapping."Field No.");
-                            CurrNodeValue := CurrNodeFieldRef.Value;
-                        end;
+                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
+                        CurrNodeFieldRef := HeaderRecordRef.Field(ExportMapping."Field No.");
+                        CurrNodeValue := CurrNodeFieldRef.Value;
                         XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
                     end;
-                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Parent Element" then begin
+                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element" then begin
+                        CurrNodeValue := ExportMapping.Source;
+                        XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                    end;
+                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Table Element" then begin
 
                         CreateParentElements(ExportMapping, XmlCurrNode);
                     end
                 until ExportMapping.Next() = 0;
         end;
         ParentNode.Add(XmlCurrNode);
+    end;
+
+    procedure LoadTableLinks()
+    var
+        InterfaceTableLink: Record "Interface Link Table";
+    begin
+        InterfaceTableLink.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
+        If InterfaceTableLink.FindSet() then
+            repeat
+
+            until InterfaceTableLink.Next() = 0;
     end;
 }

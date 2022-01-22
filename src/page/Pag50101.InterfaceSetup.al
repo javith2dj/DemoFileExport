@@ -51,18 +51,6 @@ page 50101 "Interface Setup"
     {
         area(Processing)
         {
-            action("Table Link")
-            {
-                ApplicationArea = All;
-                Caption = 'Table Link';
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                Image = Line;
-                RunObject = page "Interface Table Link";
-                RunPageLink = "Interface Code" = field("Interface Code");
-            }
-
             action(Namepace)
             {
                 ApplicationArea = All;
@@ -76,4 +64,5 @@ page 50101 "Interface Setup"
             }
         }
     }
+
 }

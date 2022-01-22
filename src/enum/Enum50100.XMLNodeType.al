@@ -1,14 +1,14 @@
 enum 50100 "XML Node Type"
 {
-    value(0; Root)
+    value(0; "Text Element")
     {
 
     }
-    Value(1; "Parent Element")
+    Value(1; "Table Element")
     {
 
     }
-    value(2; "Child Element")
+    value(2; "Field Element")
     {
 
     }
