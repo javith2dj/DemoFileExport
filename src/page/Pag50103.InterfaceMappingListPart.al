@@ -43,7 +43,7 @@ page 50103 "Interface Mapping ListPart"
                     ToolTip = 'Specifies the value of the Parent Node Name field.';
                     ApplicationArea = All;
                 }
-                field("Alias Source Name"; Rec."Alias Source Name")
+                field("Alias Source Name"; Rec."Reference Name")
                 {
                     ToolTip = 'Specifies the value of the Alias Source Name field.';
                     ApplicationArea = All;
@@ -67,7 +67,7 @@ page 50103 "Interface Mapping ListPart"
                 RunObject = page "Interface Link Table";
                 RunPageLink = "Interface Code" = field("Interface Code"),
                                 "Parent Table No." = field("Table No."),
-                                "Reference Name" = field("Node Name");
+                                "Parent Reference Name" = field("Node Name");
             }
             action("Right")
             {

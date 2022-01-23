@@ -1,8 +1,8 @@
-page 50106 "Interface Field List"
+page 50107 "Interface Tables"
 {
-    Caption = 'Interface Field List';
+    Caption = 'Interface Tables';
     PageType = List;
-    SourceTable = "Interface Link Table Fields";
+    SourceTable = "Interface Tables";
     UsageCategory = Lists;
 
     layout
@@ -13,12 +13,12 @@ page 50106 "Interface Field List"
             {
                 field("Reference Name"; Rec."Reference Name")
                 {
-                    ToolTip = 'Specifies the name of the table.';
+                    ToolTip = 'Specifies the value of the Reference Name field.';
                     ApplicationArea = All;
                 }
-                field(FieldName; Rec."Field Name")
+                field("Table Name"; Rec."Table Name")
                 {
-                    ToolTip = 'Specifies the name of the field in the table.';
+                    ToolTip = 'Specifies the value of the Table Name field.';
                     ApplicationArea = All;
                 }
             }

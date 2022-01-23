@@ -27,7 +27,7 @@ table 50100 "Interface Line"
             trigger OnLookup()
             var
                 AllObj: Record AllObjWithCaption;
-                FieldList: Record "Interface Link Table Fields";
+                FieldList: Record "Interface Table Fields";
                 InterfaceTableLink: Record "Interface Link Table";
                 TableNoList: List of [Text];
                 TableNoFilterText: Text;
@@ -46,6 +46,7 @@ table 50100 "Interface Line"
                         If Page.RunModal(Page::"Interface Field List", FieldList) = Action::LookupOK then begin
                             validate("Table No.", FieldList."Table No.");
                             validate("Field No.", FieldList."Field No.");
+                            "Reference Name" := FieldList."Reference Name";
                         end;
             end;
         }
@@ -85,7 +86,11 @@ table 50100 "Interface Line"
                 end;
             end;
         }
-        field(11; "Alias Source Name"; Boolean)
+        field(11; "Reference Name"; Text[30])
+        {
+
+        }
+        field(12; "Parent"; Boolean)
         {
 
         }
@@ -101,16 +106,17 @@ table 50100 "Interface Line"
 
     trigger OnInsert()
     var
-        LinkTableRec: Record "Interface Link Table";
-        LinkFieldsRec: Record "Interface Link Table Fields";
+        InterfaceTables: Record "Interface Tables";
+        LinkFieldsRec: Record "Interface Table Fields";
         FieldsRec: Record Field;
     begin
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
-            LinkTableRec.Init();
-            LinkTableRec."Interface Code" := "Interface Code";
-            LinkTableRec."Parent Table No." := "Table No.";
-            LinkTableRec."Parent Table Name" := Source;
-            if LinkTableRec.Insert() then begin
+            InterfaceTables.Init();
+            InterfaceTables."Interface Code" := "Interface Code";
+            InterfaceTables."Reference Name" := "Node Name";
+            InterfaceTables."Table No" := "Table No.";
+            InterfaceTables."Table Name" := Source;
+            if InterfaceTables.Insert() then begin
                 FieldsRec.SetRange(TableNo, "Table No.");
                 If FieldsRec.FindSet() then
                     repeat
@@ -129,16 +135,17 @@ table 50100 "Interface Line"
 
     trigger OnModify()
     var
-        LinkTableRec: Record "Interface Link Table";
-        LinkFieldsRec: Record "Interface Link Table Fields";
+        InterfaceTables: Record "Interface Tables";
+        LinkFieldsRec: Record "Interface Table Fields";
         FieldsRec: Record Field;
     begin
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
-            LinkTableRec.Init();
-            LinkTableRec."Interface Code" := "Interface Code";
-            LinkTableRec."Parent Table No." := "Table No.";
-            LinkTableRec."Parent Table Name" := Source;
-            if LinkTableRec.Insert() then begin
+            InterfaceTables.Init();
+            InterfaceTables."Interface Code" := "Interface Code";
+            InterfaceTables."Reference Name" := "Node Name";
+            InterfaceTables."Table No" := "Table No.";
+            InterfaceTables."Table Name" := Source;
+            if InterfaceTables.Insert() then begin
                 FieldsRec.SetRange(TableNo, "Table No.");
                 If FieldsRec.FindSet() then
                     repeat

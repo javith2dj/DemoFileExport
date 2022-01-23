@@ -1,4 +1,4 @@
-table 50105 "Interface Link Table Fields"
+table 50105 "Interface Table Fields"
 {
     Caption = 'Interface Link Table Fields';
     DataClassification = ToBeClassified;

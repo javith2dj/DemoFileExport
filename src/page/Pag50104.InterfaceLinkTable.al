@@ -10,34 +10,21 @@ page 50104 "Interface Link Table"
         {
             repeater(General)
             {
-                field("Parent Table No."; Rec."Parent Table No.")
+                field("Parent Table Name"; Rec."Parent Table Name")
                 {
-                    ToolTip = 'Specifies the value of the Parent Table No. field.';
                     ApplicationArea = All;
                 }
-                field("Link Table No."; Rec."Link Table No.")
+                field("Reference Field Name"; Rec."Parent Field Name")
                 {
-                    ToolTip = 'Specifies the value of the Link Table No. field.';
                     ApplicationArea = All;
                 }
-                field("Link Field No."; Rec."Link Field No.")
+                field("Link Table Name"; Rec."Link Table Name")
                 {
-                    ToolTip = 'Specifies the value of the Link Field No. field.';
                     ApplicationArea = All;
                 }
                 field("Link Field Name"; Rec."Link Field Name")
                 {
                     ToolTip = 'Specifies the value of the Link Field Name field.';
-                    ApplicationArea = All;
-                }
-                field("Parent Field No."; Rec."Reference Field No.")
-                {
-                    ToolTip = 'Specifies the value of the Parent Field No. field.';
-                    ApplicationArea = All;
-                }
-                field("Reference Field Name"; Rec."Reference Field Name")
-                {
-                    ToolTip = 'Specifies the value of the Reference Field Name field.';
                     ApplicationArea = All;
                 }
             }

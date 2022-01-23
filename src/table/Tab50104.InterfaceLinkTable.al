@@ -23,30 +23,19 @@ table 50104 "Interface Link Table"
         {
             trigger OnLookup()
             var
-                AllObj: Record AllObjWithCaption;
+                InterfaceTables: Record "Interface Tables";
                 InterfaceTableLink: Record "Interface Link Table";
                 TableNoList: List of [Text];
                 TableNoFilterText: Text;
                 TableNo: Text;
             begin
-                InterfaceTableLink.SetRange("Interface Code", "Interface Code");
-                If InterfaceTableLink.Findset then
-                    repeat
-                        If not TableNoList.Contains(Format(InterfaceTableLink."Parent Table No.")) then
-                            TableNoList.Add(Format(InterfaceTableLink."Parent Table No."));
-                    until InterfaceTableLink.Next() = 0;
+                If InterfaceTables.Findset then
+                    If Page.RunModal(Page::"Interface Tables", InterfaceTables) = Action::LookupOK then begin
+                        "Link Table No." := InterfaceTables."Table No";
+                        "Link Table Name" := InterfaceTables."Table Name";
+                        "Link Reference Name" := InterfaceTables."Reference Name";
+                    end;
 
-                foreach TableNo in TableNoList do begin
-                    TableNoFilterText += '''' + TableNo + '''|';
-                end;
-                TableNoFilterText := TableNoFilterText.TrimEnd('|');
-                If TableNoFilterText <> '' then begin
-                    AllObj.Reset();
-                    AllObj.SetRange("Object Type", AllObj."Object Type"::Table);
-                    AllObj.SetFilter("Object ID", TableNoFilterText);
-                    If Page.RunModal(Page::"All Objects with Caption", AllObj) = Action::LookupOK then
-                        "Link Table No." := AllObj."Object ID";
-                end;
             end;
         }
 
@@ -78,7 +67,7 @@ table 50104 "Interface Link Table"
 
             end;
         }
-        field(8; "Reference Field No."; Integer)
+        field(8; "Parent Field No."; Integer)
         {
             trigger OnValidate()
             var
@@ -86,14 +75,14 @@ table 50104 "Interface Link Table"
                 Field: Record Field;
                 TableObjectList: Page "Fields Lookup";
             begin
-                If "Reference Field No." <> 0 then begin
-                    Field.Get("Parent Table No.", "Reference Field No.");
-                    "Reference Field Name" := Field.FieldName;
+                If "Parent Field No." <> 0 then begin
+                    Field.Get("Parent Table No.", "Parent Field No.");
+                    "Parent Field Name" := Field.FieldName;
                 end;
             end;
 
         }
-        field(9; "Reference Field Name"; Text[30])
+        field(9; "Parent Field Name"; Text[30])
         {
             trigger OnLookup()
             var
@@ -102,18 +91,21 @@ table 50104 "Interface Link Table"
                 FieldList.Reset();
                 FieldList.SetRange(TableNo, "Parent Table No.");
                 If Page.RunModal(Page::"Fields Lookup", FieldList) = Action::LookupOK then
-                    validate("Reference Field No.", FieldList."No.");
+                    validate("Parent Field No.", FieldList."No.");
             end;
         }
-        field(10; "Reference Name"; Text[30])
+        field(10; "Parent Reference Name"; Text[30])
         {
 
         }
+        field(11; "Link Reference Name"; Text[30])
+        {
 
+        }
     }
     keys
     {
-        key(pk; "Interface Code", "Parent Table No.", "Link Table No.", "Reference Field No.", "Link Field No.")
+        key(pk; "Interface Code", "Parent Table No.", "Link Table No.", "Parent Field No.", "Link Field No.")
         {
             Clustered = true;
         }
