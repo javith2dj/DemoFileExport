@@ -10,10 +10,6 @@ page 50104 "Interface Link Table"
         {
             repeater(General)
             {
-                field("Parent Table Name"; Rec."Parent Table Name")
-                {
-                    ApplicationArea = All;
-                }
                 field("Reference Field Name"; Rec."Parent Field Name")
                 {
                     ApplicationArea = All;
@@ -30,4 +26,10 @@ page 50104 "Interface Link Table"
             }
         }
     }
+
+    trigger OnInsertRecord(BelowxRec: Boolean): Boolean
+    begin
+        Rec."Parent Table Name" := Rec.GetFilter("Parent Table Name");
+        Rec."Parent Reference Name" := Rec.GetFilter("Parent Reference Name");
+    end;
 }

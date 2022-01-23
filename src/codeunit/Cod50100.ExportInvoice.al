@@ -37,7 +37,7 @@ codeunit 50100 "Export Invoice"
         InterfaceHdrRecord.Get('DEMO');
         XmlDocument.ReadFrom(GetInvoiceHeader(), XMLdocOut);
         XMLdocOut.GetRoot(RootNode);
-
+        TableReferenceIndex := 1;
         HeaderRecordRef.Open(Database::"Sales Invoice Header");
         HeaderRecordRef.GetTable(SalesInvHeader);
         ExportMapping.SetRange(Level, 0);
@@ -92,11 +92,12 @@ codeunit 50100 "Export Invoice"
         'xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"/>');
     end;
 
-    procedure CreateParentElements(ExpMapping: Record "Interface Line"; var ParentNode: XmlElement)
+    procedure CreateParentElements(pInterfaceLine: Record "Interface Line"; var ParentNode: XmlElement)
     var
-        ExportMapping: Record "Interface Line";
+        lInterfaceLine: Record "Interface Line";
         TableLinkRec: Record "Interface Link Table";
         IntNamespace: Record "Interface Namespace/Prefix";
+        ParentTableRecordRef: RecordRef;
         LinkTableRecordRef: RecordRef;
         CurrRecordRef: RecordRef;
         LinkTableFieldRef: FieldRef;
@@ -109,69 +110,81 @@ codeunit 50100 "Export Invoice"
         CurrNodeValue: Text;
     begin
         FieldRefIncrement := 1;
-        If (ExpMapping."Node Type" = ExpMapping."Node Type"::"Table Element") then begin
+        If (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Table Element") then begin
             TableReferenceIndex += 1;
-            TableReferences[TableReferenceIndex].Open(ExportMapping."Table No.");
-            TableLinkRec.SetRange("Interface Code", ExpMapping."Interface Code");
-            TableLinkRec.SetRange("Parent Reference Name", ExpMapping."Reference Name");
+            TableReferences[TableReferenceIndex].Open(pInterfaceLine."Table No.");
+            TableLinkRec.SetRange("Interface Code", pInterfaceLine."Interface Code");
+            TableLinkRec.SetRange("Parent Reference Name", pInterfaceLine."Reference Name");
             if TableLinkRec.FindSet() then
                 repeat
                     Clear(LinkTableRecordRef);
                     Clear(LinkTableFieldRef);
                     Clear(ParentTableFieldRef);
+                    LinkTableRecordRef.Open(TableLinkRec."Link Table No.");
                     GetTableReferenceWithName(TableLinkRec."Link Reference Name", LinkTableRecordRef);
                     LinkTableFieldRef := LinkTableRecordRef.Field(TableLinkRec."Link Field No.");
                     ParentTableFieldRef := TableReferences[TableReferenceIndex].Field(TableLinkRec."Parent Field No.");
-                    LinkTableFieldRef.SetRange(ParentTableFieldRef.Value);
+                    ParentTableFieldRef.SetRange(LinkTableFieldRef.Value);
                 until TableLinkRec.Next() = 0;
-            TableLinkIndexes.Add(ExportMapping."Node Name", TableReferenceIndex);
-            if IntNamespace.Get(ExportMapping."Interface Code", ExpMapping.Prefix) then;
-            XmlCurrNode := XmlElement.Create(ExpMapping."Node Name", IntNamespace.Namespace);
-            if LinkTableRecordRef.FindSet() then
+            if TableLinkIndexes.ContainsKey(pInterfaceLine."Node Name") then
+                TableLinkIndexes.Set(pInterfaceLine."Node Name", TableReferenceIndex)
+            else
+                TableLinkIndexes.Add(pInterfaceLine."Node Name", TableReferenceIndex);
+            ParentTableRecordRef.Open(pInterfaceLine."Table No.");
+            ParentTableRecordRef := TableReferences[TableReferenceIndex];
+            if ParentTableRecordRef.FindSet() then
                 repeat
-                    ExportMapping.SetRange("Parent Node Name", ExpMapping."Node Name");
-                    if ExportMapping.FindSet() then
+                    if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
+                    XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+                    lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
+                    if lInterfaceLine.FindSet() then
                         repeat
-                            if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                            if (ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element") and not ExportMapping.Parent then begin
-                                Clear(XmlCurrNode);
+                            if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
+                            if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") then begin
                                 Clear(CurrRecordRef);
                                 Clear(CurrFieldRef);
-                                GetTableReferenceWithName(ExportMapping."Reference Name", CurrRecordRef);
-                                CurrFieldRef := CurrRecordRef.Field(ExportMapping."Field No.");
+                                CurrRecordRef.Open(lInterfaceLine."Table No.");
+                                GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
+                                CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
                                 CurrNodeValue := CurrFieldRef.Value;
-                                XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
+                                XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
                             end;
-                            if ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element" then begin
-                                CurrNodeValue := ExportMapping.Source;
-                                XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                            if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
+                                CurrNodeValue := lInterfaceLine.Source;
+                                XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
                             end;
-                            if ExportMapping.Parent then begin
-                                CreateParentElements(ExportMapping, XmlCurrNode);
-                            end
-                        until ExportMapping.Next() = 0;
-                until LinkTableRecordRef.Next() = 0;
-        end else begin
-            XmlCurrNode := XmlElement.Create(ExpMapping."Node Name", IntNamespace.Namespace);
-            ExportMapping.SetRange("Parent Node Name", ExpMapping."Node Name");
-            if ExportMapping.FindSet() then
-                repeat
-                    if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                    if (ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element") and ExportMapping.Parent then begin
-                        CurrNodeFieldRef := HeaderRecordRef.Field(ExportMapping."Field No.");
-                        CurrNodeValue := CurrNodeFieldRef.Value;
-                        XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
-                    end;
-                    if ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element" then begin
-                        CurrNodeValue := ExportMapping.Source;
-                        XmlCurrNode.Add(XmlElement.Create(ExportMapping."Node Name", IntNamespace.NameSpace, CurrNodeValue));
-                    end;
-                    if ExportMapping.Parent then
-                        CreateParentElements(ExportMapping, XmlCurrNode);
+                            if lInterfaceLine.Parent then
+                                CreateParentElements(lInterfaceLine, XmlCurrNode);
 
-                until ExportMapping.Next() = 0;
+                        until lInterfaceLine.Next() = 0;
+                    ParentNode.Add(XmlCurrNode);
+                until ParentTableRecordRef.Next() = 0;
+        end else begin
+            if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
+            XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+            lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
+            if lInterfaceLine.FindSet() then
+                repeat
+                    if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
+                    if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") and lInterfaceLine.Parent then begin
+                        Clear(CurrRecordRef);
+                        Clear(CurrFieldRef);
+                        CurrRecordRef.Open(lInterfaceLine."Table No.");
+                        GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
+                        CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
+                        CurrNodeValue := CurrFieldRef.Value;
+                        XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+                    end;
+                    if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
+                        CurrNodeValue := lInterfaceLine.Source;
+                        XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                    end;
+                    if lInterfaceLine.Parent then
+                        CreateParentElements(lInterfaceLine, XmlCurrNode);
+
+                until lInterfaceLine.Next() = 0;
+            ParentNode.Add(XmlCurrNode);
         end;
-        ParentNode.Add(XmlCurrNode);
     end;
 
     procedure GetTableReferenceWithName(ReferenceName: Text[30]; var CurrRecordRef: RecordRef)

@@ -69,6 +69,7 @@ table 50100 "Interface Line"
                 If "Table No." <> 0 then begin
                     AllObj.Get(AllObj."Object Type"::TableData, "Table No.");
                     Source := AllObj."Object Name";
+                    "Reference Name" := "Node Name";
                 end;
             end;
         }
@@ -113,7 +114,7 @@ table 50100 "Interface Line"
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
             InterfaceTables.Init();
             InterfaceTables."Interface Code" := "Interface Code";
-            InterfaceTables."Reference Name" := "Node Name";
+            InterfaceTables."Reference Name" := "Reference Name";
             InterfaceTables."Table No" := "Table No.";
             InterfaceTables."Table Name" := Source;
             if InterfaceTables.Insert() then begin
@@ -122,7 +123,7 @@ table 50100 "Interface Line"
                     repeat
                         LinkFieldsRec.Init();
                         LinkFieldsRec."Interface Code" := "Interface Code";
-                        LinkFieldsRec."Reference Name" := "Node Name";
+                        LinkFieldsRec."Reference Name" := "Reference Name";
                         LinkFieldsRec."Table No." := FieldsRec.TableNo;
                         LinkFieldsRec."Table Name" := FieldsRec.TableName;
                         LinkFieldsRec."Field No." := FieldsRec."No.";
@@ -142,7 +143,7 @@ table 50100 "Interface Line"
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
             InterfaceTables.Init();
             InterfaceTables."Interface Code" := "Interface Code";
-            InterfaceTables."Reference Name" := "Node Name";
+            InterfaceTables."Reference Name" := "Reference Name";
             InterfaceTables."Table No" := "Table No.";
             InterfaceTables."Table Name" := Source;
             if InterfaceTables.Insert() then begin
@@ -151,7 +152,7 @@ table 50100 "Interface Line"
                     repeat
                         LinkFieldsRec.Init();
                         LinkFieldsRec."Interface Code" := "Interface Code";
-                        LinkFieldsRec."Reference Name" := "Node Name";
+                        LinkFieldsRec."Reference Name" := "Reference Name";
                         LinkFieldsRec."Table No." := FieldsRec.TableNo;
                         LinkFieldsRec."Table Name" := FieldsRec.TableName;
                         LinkFieldsRec."Field No." := FieldsRec."No.";

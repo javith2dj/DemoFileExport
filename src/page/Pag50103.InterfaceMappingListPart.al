@@ -27,6 +27,10 @@ page 50103 "Interface Mapping ListPart"
                     ToolTip = 'Specifies the value of the Node Type field.';
                     ApplicationArea = All;
                 }
+                field(Parent; Parent)
+                {
+                    ApplicationArea = All;
+                }
                 field(Source; Rec.Source)
                 {
                     ToolTip = 'Specifies the value of the Source field.';
@@ -41,11 +45,6 @@ page 50103 "Interface Mapping ListPart"
                 field("Parent Node Name"; Rec."Parent Node Name")
                 {
                     ToolTip = 'Specifies the value of the Parent Node Name field.';
-                    ApplicationArea = All;
-                }
-                field("Alias Source Name"; Rec."Reference Name")
-                {
-                    ToolTip = 'Specifies the value of the Alias Source Name field.';
                     ApplicationArea = All;
                 }
             }
@@ -67,6 +66,7 @@ page 50103 "Interface Mapping ListPart"
                 RunObject = page "Interface Link Table";
                 RunPageLink = "Interface Code" = field("Interface Code"),
                                 "Parent Table No." = field("Table No."),
+                                "Parent Table Name" = field(Source),
                                 "Parent Reference Name" = field("Node Name");
             }
             action("Right")
@@ -110,13 +110,13 @@ page 50103 "Interface Mapping ListPart"
     trigger OnAfterGetRecord()
     begin
         NameIndent := Rec.Level;
-        NameEmphasize := (Rec."Node Type" = Rec."Node Type"::"Table Element") or (Rec.Level = 0);
+        NameEmphasize := (Rec.Parent) or (Rec.Level = 0);
     end;
 
     trigger OnNewRecord(BelowxRec: Boolean)
     begin
         NameIndent := 0;
-        NameEmphasize := (Rec."Node Type" = Rec."Node Type"::"Table Element") or (Rec.Level = 0);
+        NameEmphasize := (Rec.Parent) or (Rec.Level = 0);
     end;
 
     var
