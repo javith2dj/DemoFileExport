@@ -3,11 +3,6 @@ codeunit 50102 "Interface Function Mgt."
     var
         GLNTxt: Label 'GLN', Locked = true;
 
-    procedure Demo(var CalcValue: Text)
-    begin
-        CalcValue := 'TEST';
-    end;
-
     procedure SupplierEndPointIdBIS(var CalcValue: Text)
     var
         CompanyInfo: Record "Company Information";

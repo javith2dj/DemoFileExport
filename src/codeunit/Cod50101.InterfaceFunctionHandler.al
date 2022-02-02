@@ -19,7 +19,6 @@ codeunit 50101 "Interface Function Handler"
         IntFuncRec: Record "Interface Functions";
     begin
         IntFuncRec.DeleteAll();
-        InsertInterfaceFunctionRec('DEMO', 'This is a test function returns TEST');
         InsertInterfaceFunctionRec('SupplierEndPointIdBIS', 'Get Supplier Endpoint Id BIS');
         InsertInterfaceFunctionRec('SupplierSchemeIdBIS', 'Get Supplier Endpoint Id BIS');
     end;
@@ -39,8 +38,6 @@ codeunit 50101 "Interface Function Handler"
         IntFuncMgt: Codeunit "Interface Function Mgt.";
     begin
         case FunctionCode of
-            'DEMO':
-                IntFuncMgt.Demo(gCalculatedValue);
             'SupplierEndPointIdBIS':
                 IntFuncMgt.SupplierEndPointIdBIS(gCalculatedValue);
             'SupplierSchemeIdBIS':

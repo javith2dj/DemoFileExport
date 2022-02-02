@@ -56,12 +56,14 @@ codeunit 50100 "Export Invoice"
                     Clear(XmlCurrNode);
                     CurrNodeValue := GetTextElementValue(ExportMapping);
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
+                    AddAttributes(XmlCurrNode, ExportMapping);
                     RootNode.Add(XmlCurrNode);
                 end;
                 if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
                     Clear(XmlCurrNode);
                     CurrNodeValue := GetFieldElementValue(ExportMapping);
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
+                    AddAttributes(XmlCurrNode, ExportMapping);
                     RootNode.Add(XmlCurrNode);
                 end;
                 if ExportMapping.Parent then begin
@@ -81,25 +83,18 @@ codeunit 50100 "Export Invoice"
         InterfaceLine: Record "Interface Line";
         InterfaceNamespaces: Record "Interface Namespace/Prefix";
     begin
-        PrefixBuilder.Append('<?xml version="1.0" encoding="UTF-8" ?>');
+        PrefixBuilder.Append('<?xml version="1.0" encoding="UTF-8" ?>' +
+        '<Invoice xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 UBL-Invoice-2.0.xsd" ' +
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"');
 
-        InterfaceLine.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
-        if InterfaceLine.FindSet() then
-            repeat
-            until InterfaceLine.Next() = 0;
 
         InterfaceNamespaces.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
         if InterfaceNamespaces.FindSet() then
             repeat
+                PrefixBuilder.Append(' ' + InterfaceNamespaces.Prefix + InterfaceNamespaces.Namespace)
             until InterfaceNamespaces.Next() = 0;
-        exit('<?xml version="1.0" encoding="UTF-8" ?>' +
-        '<Invoice xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 UBL-Invoice-2.0.xsd" ' +
-        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" ' +
-        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ' +
-        'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" ' +
-        'xmlns:ccts="urn:oasis:names:specification:ubl:schema:xsd:CoreComponentParameters-2" ' +
-        'xmlns:sdt="urn:oasis:names:specification:ubl:schema:xsd:SpecializedDatatypes-2" ' +
-        'xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"/>');
+
+        exit(PrefixBuilder.ToText());
     end;
 
     procedure CreateParentElements(pInterfaceLine: Record "Interface Line"; var ParentNode: XmlElement)
@@ -146,6 +141,7 @@ codeunit 50100 "Export Invoice"
                 repeat
                     if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
                     XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+                    AddAttributes(XmlCurrNode, pInterfaceLine);
                     lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
                     if lInterfaceLine.FindSet() then
                         repeat
@@ -153,10 +149,12 @@ codeunit 50100 "Export Invoice"
                             if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") then begin
                                 CurrNodeValue := GetFieldElementValue(lInterfaceLine);
                                 XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+                                AddAttributes(XmlCurrNode, lInterfaceLine);
                             end;
                             if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
                                 CurrNodeValue := GetTextElementValue(lInterfaceLine);
                                 XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                                AddAttributes(XmlCurrNode, lInterfaceLine);
                             end;
                             if lInterfaceLine.Parent then
                                 CreateParentElements(lInterfaceLine, XmlCurrNode);
@@ -174,10 +172,12 @@ codeunit 50100 "Export Invoice"
                     if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") and lInterfaceLine.Parent then begin
                         CurrNodeValue := GetFieldElementValue(lInterfaceLine);
                         XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+                        AddAttributes(XmlCurrNode, lInterfaceLine);
                     end;
                     if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
                         CurrNodeValue := GetTextElementValue(lInterfaceLine);
                         XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
+                        AddAttributes(XmlCurrNode, lInterfaceLine);
                     end;
                     if lInterfaceLine.Parent then
                         CreateParentElements(lInterfaceLine, XmlCurrNode);
@@ -272,6 +272,18 @@ codeunit 50100 "Export Invoice"
     begin
         DecimalValue := FieldRef.Value();
         ValueText := Format(Multiplier * DecimalValue);
+    end;
+
+    local procedure AddAttributes(var CurrNode: XmlElement; InterfaceLine: Record "Interface Line")
+    var
+        IntLineAttributes: Record "Interface Line Attributes";
+    begin
+        IntLineAttributes.SetRange("Interface Code", InterfaceLine."Interface Code");
+        IntLineAttributes.SetRange("Line No.", InterfaceLine."Line No.");
+        If IntLineAttributes.FindSet() then
+            repeat
+                CurrNode.SetAttribute(IntLineAttributes."Attribute Key", IntLineAttributes."Attribute Value");
+            until IntLineAttributes.Next() = 0;
     end;
 
 }
