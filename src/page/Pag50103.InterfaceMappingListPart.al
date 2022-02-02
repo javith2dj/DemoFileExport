@@ -44,9 +44,25 @@ page 50103 "Interface Mapping ListPart"
                 {
                     ApplicationArea = All;
                 }
+                field("Function Code"; "Function Code")
+                {
+                    ApplicationArea = All;
+                }
                 field(Prefix; Rec.Prefix)
                 {
                     ToolTip = 'Specifies the value of the Prefix field.';
+                    ApplicationArea = All;
+                }
+                field("Negative-Sign Identifier"; "Negative-Sign Identifier")
+                {
+                    ApplicationArea = All;
+                }
+                field(Multiplier; Multiplier)
+                {
+                    ApplicationArea = All;
+                }
+                field("Transformation Rule"; "Transformation Rule")
+                {
                     ApplicationArea = All;
                 }
                 field("Parent Node Name"; Rec."Parent Node Name")
@@ -75,6 +91,18 @@ page 50103 "Interface Mapping ListPart"
                                 "Parent Table No." = field("Table No."),
                                 "Parent Table Name" = field(Source),
                                 "Parent Reference Name" = field("Node Name");
+            }
+            action(Attributes)
+            {
+                ApplicationArea = All;
+                Caption = 'Attributes';
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                Image = Line;
+                RunObject = page "Interface Line Attributes";
+                RunPageLink = "Interface Code" = field("Interface Code"),
+                                "Line No." = field("Line No.");
             }
             action("Right")
             {

@@ -1,11 +1,9 @@
 page 50108 "Interface Line Attributes"
 {
-    ApplicationArea = All;
     Caption = 'Interface Line Attributes';
     PageType = List;
     SourceTable = "Interface Line Attributes";
-    UsageCategory = Lists;
-    
+
     layout
     {
         area(content)
