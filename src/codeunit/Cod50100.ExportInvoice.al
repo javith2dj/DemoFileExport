@@ -14,6 +14,7 @@ codeunit 50100 "Export Invoice"
         HeaderRecordRef: RecordRef;
         InterfaceHdrRecord: Record "Interface Header";
         TableReferenceIndex: Integer;
+        IncorrectFormatOrTypeErr: Label 'Incorrect format %1 or culture %2 specified for the node %3';
 
     local procedure createxmlfile(SalesInvHeader: Record "Sales Invoice Header")
     var
@@ -63,7 +64,7 @@ codeunit 50100 "Export Invoice"
                     Clear(CurrFieldRef);
                     GetTableReferenceWithName(ExportMapping."Reference Name", CurrRecordRef);
                     CurrFieldRef := CurrRecordRef.Field(ExportMapping."Field No.");
-                    CurrNodeValue := CurrFieldRef.Value;
+                    CurrNodeValue := SetValue(ExportMapping, CurrFieldRef);
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
                     RootNode.Add(XmlCurrNode);
                 end;
@@ -81,7 +82,20 @@ codeunit 50100 "Export Invoice"
     procedure GetInvoiceHeader(): Text;
     var
         PrefixBuilder: TextBuilder;
+        InterfaceLine: Record "Interface Line";
+        InterfaceNamespaces: Record "Interface Namespace/Prefix";
     begin
+        PrefixBuilder.Append('<?xml version="1.0" encoding="UTF-8" ?>');
+
+        InterfaceLine.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
+        if InterfaceLine.FindSet() then
+            repeat
+            until InterfaceLine.Next() = 0;
+
+        InterfaceNamespaces.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
+        if InterfaceNamespaces.FindSet() then
+            repeat
+            until InterfaceNamespaces.Next() = 0;
         exit('<?xml version="1.0" encoding="UTF-8" ?>' +
         '<Invoice xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 UBL-Invoice-2.0.xsd" ' +
         'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" ' +
@@ -146,7 +160,7 @@ codeunit 50100 "Export Invoice"
                                 CurrRecordRef.Open(lInterfaceLine."Table No.");
                                 GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
                                 CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
-                                CurrNodeValue := CurrFieldRef.Value;
+                                CurrNodeValue := SetValue(lInterfaceLine, CurrFieldRef);
                                 XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
                             end;
                             if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
@@ -172,7 +186,7 @@ codeunit 50100 "Export Invoice"
                         CurrRecordRef.Open(lInterfaceLine."Table No.");
                         GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
                         CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
-                        CurrNodeValue := CurrFieldRef.Value;
+                        CurrNodeValue := SetValue(lInterfaceLine, CurrFieldRef);
                         XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
                     end;
                     if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
@@ -194,4 +208,51 @@ codeunit 50100 "Export Invoice"
         ReferenceIndex := TableLinkIndexes.Get(ReferenceName);
         CurrRecordRef := TableReferences[ReferenceIndex];
     end;
+
+    local procedure SetValue(InterfaceLine: Record "Interface Line"; Var FieldRef: FieldRef) TransformedValue: Text
+    var
+        TransformationRule: Record "Transformation Rule";
+        NegativeSignIdentifier: Text;
+    begin
+        TransformedValue := DelChr(FieldRef.Value, '>'); // We shoud use the trim transformation rule instead of this
+        if TransformationRule.Get(InterfaceLine."Transformation Rule") then
+            TransformedValue := TransformationRule.TransformText(FieldRef.Value);
+
+        case FieldRef.Type of
+            FieldType::Date:
+                SetDateDecimalField(TransformedValue, InterfaceLine, FieldRef);
+            FieldType::Decimal:
+                if InterfaceLine."Negative-Sign Identifier" = '' then begin
+                    SetDateDecimalField(TransformedValue, InterfaceLine, FieldRef);
+                    AdjustDecimalWithMultiplier(FieldRef, InterfaceLine.Multiplier, TransformedValue);
+                end else begin
+                    NegativeSignIdentifier := InterfaceLine."Negative-Sign Identifier";
+                    TransformedValue := NegativeSignIdentifier + Format(FieldRef.Value());
+                end;
+        end;
+    end;
+
+    local procedure SetDateDecimalField(var ValueText: Text; InterfaceLine: Record "Interface Line"; var FieldRef: FieldRef)
+    var
+        TypeHelper: Codeunit "Type Helper";
+        Value: Variant;
+    begin
+        Value := FieldRef.Value;
+
+        if not TypeHelper.Evaluate(
+             Value, ValueText, InterfaceLine."Data Format", InterfaceLine."Data Formatting Culture")
+        then
+            Error(StrSubStNo(IncorrectFormatOrTypeErr, InterfaceLine."Data Format", InterfaceLine."Data Formatting Culture", InterfaceLine."Node Name"));
+
+        ValueText := Format(Value);
+    end;
+
+    local procedure AdjustDecimalWithMultiplier(var FieldRef: FieldRef; Multiplier: Decimal; var ValueText: Text)
+    var
+        DecimalValue: Decimal;
+    begin
+        DecimalValue := FieldRef.Value();
+        ValueText := Format(Multiplier * DecimalValue);
+    end;
+
 }

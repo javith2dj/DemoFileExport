@@ -95,6 +95,44 @@ table 50100 "Interface Line"
         {
 
         }
+        field(13; "Data Type"; Option)
+        {
+            Caption = 'Data Type';
+            OptionCaption = 'Text,Date,Decimal,DateTime';
+            OptionMembers = Text,Date,Decimal,DateTime;
+        }
+        field(14; "Data Format"; Text[100])
+        {
+
+        }
+        field(15; "Data Formatting Culture"; Text[100])
+        {
+
+        }
+        field(16; "Negative-Sign Identifier"; Text[30])
+        {
+            Caption = 'Negative-Sign Identifier';
+        }
+        field(17; Multiplier; Decimal)
+        {
+            Caption = 'Multiplier';
+            InitValue = 1;
+
+            trigger OnValidate()
+            begin
+                if IsValidToUseMultiplier and (Multiplier = 0) then
+                    Error(ZeroNotAllowedErr);
+            end;
+        }
+        field(18; "Transformation Rule"; Code[20])
+        {
+            Caption = 'Transformation Rule';
+            TableRelation = "Transformation Rule";
+        }
+        field(19; "Overwrite Value"; Boolean)
+        {
+            Caption = 'Overwrite Value';
+        }
     }
 
     keys
@@ -104,6 +142,8 @@ table 50100 "Interface Line"
             Clustered = true;
         }
     }
+    var
+        ZeroNotAllowedErr: Label 'All numeric values are allowed except zero.';
 
     trigger OnInsert()
     var
@@ -161,5 +201,10 @@ table 50100 "Interface Line"
                     until FieldsRec.Next() = 0;
             end;
         end;
+    end;
+
+    local procedure IsValidToUseMultiplier(): Boolean
+    begin
+        exit("Data Type" = "Data Type"::Decimal);
     end;
 }
