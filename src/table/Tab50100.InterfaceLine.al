@@ -133,6 +133,11 @@ table 50100 "Interface Line"
         {
             Caption = 'Overwrite Value';
         }
+        field(20; "Function Code"; Code[20])
+        {
+            Caption = 'Function Code';
+            TableRelation = "Interface Functions";
+        }
     }
 
     keys

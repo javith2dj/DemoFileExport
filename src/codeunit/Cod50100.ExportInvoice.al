@@ -54,17 +54,13 @@ codeunit 50100 "Export Invoice"
                 if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
                 if (ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element") and not (ExportMapping.Parent) then begin
                     Clear(XmlCurrNode);
-                    CurrNodeValue := ExportMapping.Source;
+                    CurrNodeValue := GetTextElementValue(ExportMapping);
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
                     RootNode.Add(XmlCurrNode);
                 end;
                 if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
                     Clear(XmlCurrNode);
-                    Clear(CurrRecordRef);
-                    Clear(CurrFieldRef);
-                    GetTableReferenceWithName(ExportMapping."Reference Name", CurrRecordRef);
-                    CurrFieldRef := CurrRecordRef.Field(ExportMapping."Field No.");
-                    CurrNodeValue := SetValue(ExportMapping, CurrFieldRef);
+                    CurrNodeValue := GetFieldElementValue(ExportMapping);
                     XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
                     RootNode.Add(XmlCurrNode);
                 end;
@@ -155,16 +151,11 @@ codeunit 50100 "Export Invoice"
                         repeat
                             if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
                             if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") then begin
-                                Clear(CurrRecordRef);
-                                Clear(CurrFieldRef);
-                                CurrRecordRef.Open(lInterfaceLine."Table No.");
-                                GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
-                                CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
-                                CurrNodeValue := SetValue(lInterfaceLine, CurrFieldRef);
+                                CurrNodeValue := GetFieldElementValue(lInterfaceLine);
                                 XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
                             end;
                             if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
-                                CurrNodeValue := lInterfaceLine.Source;
+                                CurrNodeValue := GetTextElementValue(lInterfaceLine);
                                 XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
                             end;
                             if lInterfaceLine.Parent then
@@ -181,16 +172,11 @@ codeunit 50100 "Export Invoice"
                 repeat
                     if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
                     if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") and lInterfaceLine.Parent then begin
-                        Clear(CurrRecordRef);
-                        Clear(CurrFieldRef);
-                        CurrRecordRef.Open(lInterfaceLine."Table No.");
-                        GetTableReferenceWithName(lInterfaceLine."Reference Name", CurrRecordRef);
-                        CurrFieldRef := CurrRecordRef.Field(lInterfaceLine."Field No.");
-                        CurrNodeValue := SetValue(lInterfaceLine, CurrFieldRef);
+                        CurrNodeValue := GetFieldElementValue(lInterfaceLine);
                         XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
                     end;
                     if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
-                        CurrNodeValue := lInterfaceLine.Source;
+                        CurrNodeValue := GetTextElementValue(lInterfaceLine);
                         XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
                     end;
                     if lInterfaceLine.Parent then
@@ -201,7 +187,7 @@ codeunit 50100 "Export Invoice"
         end;
     end;
 
-    procedure GetTableReferenceWithName(ReferenceName: Text[30]; var CurrRecordRef: RecordRef)
+    local procedure GetTableReferenceWithName(ReferenceName: Text[30]; var CurrRecordRef: RecordRef)
     var
         ReferenceIndex: Integer;
     begin
@@ -209,12 +195,45 @@ codeunit 50100 "Export Invoice"
         CurrRecordRef := TableReferences[ReferenceIndex];
     end;
 
+    local procedure GetFieldElementValue(InterfaceLine: Record "Interface Line"): Text
+    var
+        CurrRecordRef: RecordRef;
+        CurrFieldRef: FieldRef;
+        FuncCodeHandler: Codeunit "Interface Function Handler";
+    begin
+        if InterfaceLine."Function Code" <> '' then begin
+            FuncCodeHandler.SetGlobals(InterfaceLine."Function Code");
+            FuncCodeHandler.Run();
+            exit(FuncCodeHandler.GetCalculatedValue());
+        end;
+
+        Clear(CurrRecordRef);
+        Clear(CurrFieldRef);
+        CurrRecordRef.Open(InterfaceLine."Table No.");
+        GetTableReferenceWithName(InterfaceLine."Reference Name", CurrRecordRef);
+        CurrFieldRef := CurrRecordRef.Field(InterfaceLine."Field No.");
+        exit(SetValue(InterfaceLine, CurrFieldRef));
+    end;
+
+    local procedure GetTextElementValue(InterfaceLine: Record "Interface Line"): Text
+    var
+        FuncCodeHandler: Codeunit "Interface Function Handler";
+    begin
+        if InterfaceLine."Function Code" <> '' then begin
+            FuncCodeHandler.SetGlobals(InterfaceLine."Function Code");
+            FuncCodeHandler.Run();
+            exit(FuncCodeHandler.GetCalculatedValue());
+        end;
+
+        exit(InterfaceLine.Source);
+    end;
+
     local procedure SetValue(InterfaceLine: Record "Interface Line"; Var FieldRef: FieldRef) TransformedValue: Text
     var
         TransformationRule: Record "Transformation Rule";
         NegativeSignIdentifier: Text;
     begin
-        TransformedValue := DelChr(FieldRef.Value, '>'); // We shoud use the trim transformation rule instead of this
+        TransformedValue := DelChr(FieldRef.Value, '>');
         if TransformationRule.Get(InterfaceLine."Transformation Rule") then
             TransformedValue := TransformationRule.TransformText(FieldRef.Value);
 

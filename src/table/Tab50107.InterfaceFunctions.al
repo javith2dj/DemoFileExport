@@ -2,7 +2,7 @@ table 50107 "Interface Functions"
 {
     fields
     {
-        field(1; "Function Code"; Code[20])
+        field(1; "Function Code"; Code[50])
         {
 
         }
