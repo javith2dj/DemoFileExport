@@ -20,10 +20,10 @@ codeunit 50101 "Interface Function Handler"
     begin
         IntFuncRec.DeleteAll();
         InsertInterfaceFunctionRec('SupplierEndPointIdBIS', 'Get Supplier Endpoint Id BIS');
-        InsertInterfaceFunctionRec('SupplierSchemeIdBIS', 'Get Supplier Endpoint Id BIS');
+        InsertInterfaceFunctionRec('SupplierSchemeIdBIS', 'Get Supplier Scheme Id BIS');
     end;
 
-    local procedure InsertInterfaceFunctionRec(FuncCode: Code[20]; Desc: Text[250])
+    local procedure InsertInterfaceFunctionRec(FuncCode: Code[50]; Desc: Text[250])
     var
         IntFuncRec: Record "Interface Functions";
     begin

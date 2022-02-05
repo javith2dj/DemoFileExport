@@ -51,23 +51,12 @@ codeunit 50100 "Export Invoice"
         ExportMapping.SetRange(Level, 1);
         if ExportMapping.FindSet() then
             repeat
-                if IntNamespace.Get(ExportMapping."Interface Code", ExportMapping.Prefix) then;
-                if (ExportMapping."Node Type" = ExportMapping."Node Type"::"Text Element") and not (ExportMapping.Parent) then begin
+                if ExportMapping.Parent then
+                    CreateParentElements(ExportMapping, RootNode)
+                else begin
                     Clear(XmlCurrNode);
-                    CurrNodeValue := GetTextElementValue(ExportMapping);
-                    XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
-                    AddAttributes(XmlCurrNode, ExportMapping);
+                    CreateChildElement(ExportMapping, XmlCurrNode);
                     RootNode.Add(XmlCurrNode);
-                end;
-                if ExportMapping."Node Type" = ExportMapping."Node Type"::"Field Element" then begin
-                    Clear(XmlCurrNode);
-                    CurrNodeValue := GetFieldElementValue(ExportMapping);
-                    XmlCurrNode := XmlElement.Create(ExportMapping."Node Name", IntNamespace.Namespace, CurrNodeValue);
-                    AddAttributes(XmlCurrNode, ExportMapping);
-                    RootNode.Add(XmlCurrNode);
-                end;
-                if ExportMapping.Parent then begin
-                    CreateParentElements(ExportMapping, RootNode);
                 end;
             until ExportMapping.Next() = 0;
         TempBLOB.CreateOutStream(outs);
@@ -91,8 +80,10 @@ codeunit 50100 "Export Invoice"
         InterfaceNamespaces.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
         if InterfaceNamespaces.FindSet() then
             repeat
-                PrefixBuilder.Append(' ' + InterfaceNamespaces.Prefix + InterfaceNamespaces.Namespace)
+                PrefixBuilder.Append(' xmlns:' + InterfaceNamespaces.Prefix + '="' + InterfaceNamespaces.Namespace + '"')
             until InterfaceNamespaces.Next() = 0;
+
+        PrefixBuilder.Append('/>');
 
         exit(PrefixBuilder.ToText());
     end;
@@ -145,20 +136,10 @@ codeunit 50100 "Export Invoice"
                     lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
                     if lInterfaceLine.FindSet() then
                         repeat
-                            if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
-                            if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") then begin
-                                CurrNodeValue := GetFieldElementValue(lInterfaceLine);
-                                XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
-                                AddAttributes(XmlCurrNode, lInterfaceLine);
-                            end;
-                            if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
-                                CurrNodeValue := GetTextElementValue(lInterfaceLine);
-                                XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
-                                AddAttributes(XmlCurrNode, lInterfaceLine);
-                            end;
                             if lInterfaceLine.Parent then
-                                CreateParentElements(lInterfaceLine, XmlCurrNode);
-
+                                CreateParentElements(lInterfaceLine, XmlCurrNode)
+                            else
+                                CreateChildElement(lInterfaceLine, XmlCurrNode);
                         until lInterfaceLine.Next() = 0;
                     ParentNode.Add(XmlCurrNode);
                 until ParentTableRecordRef.Next() = 0;
@@ -168,23 +149,32 @@ codeunit 50100 "Export Invoice"
             lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
             if lInterfaceLine.FindSet() then
                 repeat
-                    if IntNamespace.Get(lInterfaceLine."Interface Code", lInterfaceLine.Prefix) then;
-                    if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Field Element") and lInterfaceLine.Parent then begin
-                        CurrNodeValue := GetFieldElementValue(lInterfaceLine);
-                        XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
-                        AddAttributes(XmlCurrNode, lInterfaceLine);
-                    end;
-                    if (lInterfaceLine."Node Type" = lInterfaceLine."Node Type"::"Text Element") and not lInterfaceLine.Parent then begin
-                        CurrNodeValue := GetTextElementValue(lInterfaceLine);
-                        XmlCurrNode.Add(XmlElement.Create(lInterfaceLine."Node Name", IntNamespace.NameSpace, CurrNodeValue));
-                        AddAttributes(XmlCurrNode, lInterfaceLine);
-                    end;
                     if lInterfaceLine.Parent then
-                        CreateParentElements(lInterfaceLine, XmlCurrNode);
-
+                        CreateParentElements(lInterfaceLine, XmlCurrNode)
+                    else
+                        CreateChildElement(lInterfaceLine, XmlCurrNode);
                 until lInterfaceLine.Next() = 0;
             ParentNode.Add(XmlCurrNode);
         end;
+    end;
+
+    local procedure CreateChildElement(pInterfaceLine: Record "Interface Line"; var ParentNode: XmlElement)
+    var
+        IntNamespace: Record "Interface Namespace/Prefix";
+        CurrNodeValue: Text;
+        XmlCurrNode: XmlElement;
+    begin
+        if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
+        case pInterfaceLine."Node Type" of
+            pInterfaceLine."Node Type"::"Field Element":
+                CurrNodeValue := GetFieldElementValue(pInterfaceLine);
+            pInterfaceLine."Node Type"::"Text Element":
+                CurrNodeValue := GetTextElementValue(pInterfaceLine);
+            pInterfaceLine."Node Type"::"Function Element":
+                CurrNodeValue := GetFunctionElementValue(pInterfaceLine);
+        end;
+        XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+        AddAttributes(XmlCurrNode, pInterfaceLine);
     end;
 
     local procedure GetTableReferenceWithName(ReferenceName: Text[30]; var CurrRecordRef: RecordRef)
@@ -201,12 +191,6 @@ codeunit 50100 "Export Invoice"
         CurrFieldRef: FieldRef;
         FuncCodeHandler: Codeunit "Interface Function Handler";
     begin
-        if InterfaceLine."Function Code" <> '' then begin
-            FuncCodeHandler.SetGlobals(InterfaceLine."Function Code");
-            FuncCodeHandler.Run();
-            exit(FuncCodeHandler.GetCalculatedValue());
-        end;
-
         Clear(CurrRecordRef);
         Clear(CurrFieldRef);
         CurrRecordRef.Open(InterfaceLine."Table No.");
@@ -215,17 +199,29 @@ codeunit 50100 "Export Invoice"
         exit(SetValue(InterfaceLine, CurrFieldRef));
     end;
 
-    local procedure GetTextElementValue(InterfaceLine: Record "Interface Line"): Text
+    local procedure GetTextElementValue(InterfaceLine: Record "Interface Line") TransformedValue: Text
+    var
+        TransformationRule: Record "Transformation Rule";
+    begin
+        TransformedValue := InterfaceLine.Source;
+        if TransformationRule.Get(InterfaceLine."Transformation Rule") then
+            TransformedValue := TransformationRule.TransformText(TransformedValue);
+        exit(TransformedValue);
+    end;
+
+    local procedure GetFunctionElementValue(InterfaceLine: Record "Interface Line") TransformedValue: Text
     var
         FuncCodeHandler: Codeunit "Interface Function Handler";
+        TransformationRule: Record "Transformation Rule";
     begin
         if InterfaceLine."Function Code" <> '' then begin
             FuncCodeHandler.SetGlobals(InterfaceLine."Function Code");
             FuncCodeHandler.Run();
-            exit(FuncCodeHandler.GetCalculatedValue());
+            TransformedValue := FuncCodeHandler.GetCalculatedValue();
+            if TransformationRule.Get(InterfaceLine."Transformation Rule") then
+                TransformedValue := TransformationRule.TransformText(TransformedValue);
+            exit(TransformedValue);
         end;
-
-        exit(InterfaceLine.Source);
     end;
 
     local procedure SetValue(InterfaceLine: Record "Interface Line"; Var FieldRef: FieldRef) TransformedValue: Text
@@ -233,7 +229,7 @@ codeunit 50100 "Export Invoice"
         TransformationRule: Record "Transformation Rule";
         NegativeSignIdentifier: Text;
     begin
-        TransformedValue := DelChr(FieldRef.Value, '>');
+        TransformedValue := FieldRef.Value;
         if TransformationRule.Get(InterfaceLine."Transformation Rule") then
             TransformedValue := TransformationRule.TransformText(FieldRef.Value);
 
@@ -257,6 +253,9 @@ codeunit 50100 "Export Invoice"
         Value: Variant;
     begin
         Value := FieldRef.Value;
+
+        if InterfaceLine."Data Format" = '' then
+            exit;
 
         if not TypeHelper.Evaluate(
              Value, ValueText, InterfaceLine."Data Format", InterfaceLine."Data Formatting Culture")

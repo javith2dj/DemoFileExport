@@ -12,7 +12,7 @@ enum 50100 "XML Node Type"
     {
 
     }
-    value(3; Attribute)
+    value(3; "Function Element")
     {
 
     }

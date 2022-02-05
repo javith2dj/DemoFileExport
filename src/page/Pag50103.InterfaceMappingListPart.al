@@ -36,14 +36,6 @@ page 50103 "Interface Mapping ListPart"
                     ToolTip = 'Specifies the value of the Source field.';
                     ApplicationArea = All;
                 }
-                field("Data Format"; "Data Format")
-                {
-                    ApplicationArea = All;
-                }
-                field("Data Formatting Culture"; "Data Formatting Culture")
-                {
-                    ApplicationArea = All;
-                }
                 field("Function Code"; "Function Code")
                 {
                     ApplicationArea = All;
