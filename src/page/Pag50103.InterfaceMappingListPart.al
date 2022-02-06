@@ -36,10 +36,6 @@ page 50103 "Interface Mapping ListPart"
                     ToolTip = 'Specifies the value of the Source field.';
                     ApplicationArea = All;
                 }
-                field("Function Code"; "Function Code")
-                {
-                    ApplicationArea = All;
-                }
                 field(Prefix; Rec.Prefix)
                 {
                     ToolTip = 'Specifies the value of the Prefix field.';
@@ -60,6 +56,10 @@ page 50103 "Interface Mapping ListPart"
                 field("Parent Node Name"; Rec."Parent Node Name")
                 {
                     ToolTip = 'Specifies the value of the Parent Node Name field.';
+                    ApplicationArea = All;
+                }
+                field("Xml Name"; "Xml Name")
+                {
                     ApplicationArea = All;
                 }
             }
@@ -94,7 +94,8 @@ page 50103 "Interface Mapping ListPart"
                 Image = Line;
                 RunObject = page "Interface Line Attributes";
                 RunPageLink = "Interface Code" = field("Interface Code"),
-                                "Line No." = field("Line No.");
+                                "Line No." = field("Line No."),
+                                "Node Name" = field("Node Name");
             }
             action("Right")
             {

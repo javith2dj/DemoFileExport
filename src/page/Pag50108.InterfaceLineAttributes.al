@@ -3,6 +3,8 @@ page 50108 "Interface Line Attributes"
     Caption = 'Interface Line Attributes';
     PageType = List;
     SourceTable = "Interface Line Attributes";
+    ApplicationArea = All;
+    UsageCategory = Lists;
 
     layout
     {
@@ -15,6 +17,10 @@ page 50108 "Interface Line Attributes"
                     ToolTip = 'Specifies the value of the Attribute Key field.';
                     ApplicationArea = All;
                 }
+                field("Attribute Type"; Rec."Attribute Type")
+                {
+                    ApplicationArea = All;
+                }
                 field("Attribute Value"; Rec."Attribute Value")
                 {
                     ToolTip = 'Specifies the value of the Attribute Value field.';
@@ -23,4 +29,9 @@ page 50108 "Interface Line Attributes"
             }
         }
     }
+
+    trigger OnInsertRecord(BelowxRec: Boolean): Boolean
+    begin
+        Rec."Node Name" := Rec.GetFilter("Node Name");
+    end;
 }

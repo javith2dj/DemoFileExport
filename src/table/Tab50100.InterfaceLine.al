@@ -29,6 +29,7 @@ table 50100 "Interface Line"
                 AllObj: Record AllObjWithCaption;
                 FieldList: Record "Interface Table Fields";
                 InterfaceTableLink: Record "Interface Link Table";
+                FunctionList: Record "Interface Functions";
                 TableNoList: List of [Text];
                 TableNoFilterText: Text;
                 TableNo: Text;
@@ -48,6 +49,13 @@ table 50100 "Interface Line"
                             validate("Field No.", FieldList."Field No.");
                             "Reference Name" := FieldList."Reference Name";
                         end;
+
+                if "Node Type" = "Node Type"::"Function Element" then begin
+                    FunctionList.Reset();
+                    if Page.RunModal(Page::"Interface Function List", FunctionList) = Action::LookupOK then begin
+                        Source := FunctionList."Function Code";
+                    end;
+                end
             end;
         }
         field(7; Prefix; Text[30])
@@ -133,10 +141,14 @@ table 50100 "Interface Line"
         {
             Caption = 'Overwrite Value';
         }
-        field(20; "Function Code"; Code[20])
+        field(20; "Function Code"; Code[50])
         {
             Caption = 'Function Code';
             TableRelation = "Interface Functions";
+        }
+        field(21; "Xml Name"; Text[200])
+        {
+            Caption = 'XML Name';
         }
     }
 

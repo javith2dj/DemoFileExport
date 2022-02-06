@@ -131,7 +131,10 @@ codeunit 50100 "Export Invoice"
             if ParentTableRecordRef.FindSet() then
                 repeat
                     if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
-                    XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+                    if pInterfaceLine."Xml Name" <> '' then
+                        XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace)
+                    else
+                        XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
                     AddAttributes(XmlCurrNode, pInterfaceLine);
                     lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
                     if lInterfaceLine.FindSet() then
@@ -145,7 +148,10 @@ codeunit 50100 "Export Invoice"
                 until ParentTableRecordRef.Next() = 0;
         end else begin
             if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
-            XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+            if pInterfaceLine."Xml Name" <> '' then
+                XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace)
+            else
+                XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
             lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
             if lInterfaceLine.FindSet() then
                 repeat
@@ -173,7 +179,10 @@ codeunit 50100 "Export Invoice"
             pInterfaceLine."Node Type"::"Function Element":
                 CurrNodeValue := GetFunctionElementValue(pInterfaceLine);
         end;
-        XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+        if pInterfaceLine."Xml Name" <> '' then
+            XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace, CurrNodeValue))
+        else
+            XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
         AddAttributes(XmlCurrNode, pInterfaceLine);
     end;
 
@@ -189,7 +198,6 @@ codeunit 50100 "Export Invoice"
     var
         CurrRecordRef: RecordRef;
         CurrFieldRef: FieldRef;
-        FuncCodeHandler: Codeunit "Interface Function Handler";
     begin
         Clear(CurrRecordRef);
         Clear(CurrFieldRef);
@@ -197,6 +205,19 @@ codeunit 50100 "Export Invoice"
         GetTableReferenceWithName(InterfaceLine."Reference Name", CurrRecordRef);
         CurrFieldRef := CurrRecordRef.Field(InterfaceLine."Field No.");
         exit(SetValue(InterfaceLine, CurrFieldRef));
+    end;
+
+    local procedure GetAttributeFieldElementValue(InterfaceAttr: Record "Interface Line Attributes"): Text
+    var
+        CurrRecordRef: RecordRef;
+        CurrFieldRef: FieldRef;
+    begin
+        Clear(CurrRecordRef);
+        Clear(CurrFieldRef);
+        CurrRecordRef.Open(InterfaceAttr."Table No.");
+        GetTableReferenceWithName(InterfaceAttr."Reference Name", CurrRecordRef);
+        CurrFieldRef := CurrRecordRef.Field(InterfaceAttr."Field No.");
+        exit(CurrFieldRef.Value());
     end;
 
     local procedure GetTextElementValue(InterfaceLine: Record "Interface Line") TransformedValue: Text
@@ -213,9 +234,10 @@ codeunit 50100 "Export Invoice"
     var
         FuncCodeHandler: Codeunit "Interface Function Handler";
         TransformationRule: Record "Transformation Rule";
+        SalesHeader: Record "Sales Header";
     begin
-        if InterfaceLine."Function Code" <> '' then begin
-            FuncCodeHandler.SetGlobals(InterfaceLine."Function Code");
+        if InterfaceLine.Source <> '' then begin
+            FuncCodeHandler.SetGlobals(InterfaceLine.Source, HeaderRecordRef);
             FuncCodeHandler.Run();
             TransformedValue := FuncCodeHandler.GetCalculatedValue();
             if TransformationRule.Get(InterfaceLine."Transformation Rule") then
@@ -276,12 +298,30 @@ codeunit 50100 "Export Invoice"
     local procedure AddAttributes(var CurrNode: XmlElement; InterfaceLine: Record "Interface Line")
     var
         IntLineAttributes: Record "Interface Line Attributes";
+        FuncCodeHandler: Codeunit "Interface Function Handler";
     begin
         IntLineAttributes.SetRange("Interface Code", InterfaceLine."Interface Code");
         IntLineAttributes.SetRange("Line No.", InterfaceLine."Line No.");
         If IntLineAttributes.FindSet() then
             repeat
-                CurrNode.SetAttribute(IntLineAttributes."Attribute Key", IntLineAttributes."Attribute Value");
+                case IntLineAttributes."Attribute Type" of
+                    IntLineAttributes."Attribute Type"::"Text Element":
+                        begin
+                            CurrNode.SetAttribute(IntLineAttributes."Attribute Key", IntLineAttributes."Attribute Value");
+                        end;
+                    IntLineAttributes."Attribute Type"::"Field Element":
+                        begin
+                            CurrNode.SetAttribute(IntLineAttributes."Attribute Key", GetAttributeFieldElementValue(IntLineAttributes));
+                        end;
+                    IntLineAttributes."Attribute Type"::"Function Element":
+                        begin
+                            if IntLineAttributes."Attribute Value" <> '' then begin
+                                FuncCodeHandler.SetGlobals(IntLineAttributes."Attribute Value", HeaderRecordRef);
+                                FuncCodeHandler.Run();
+                                CurrNode.SetAttribute(IntLineAttributes."Attribute Key", FuncCodeHandler.GetCalculatedValue());
+                            end;
+                        end;
+                end
             until IntLineAttributes.Next() = 0;
     end;
 
