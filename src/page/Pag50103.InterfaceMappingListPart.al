@@ -62,6 +62,10 @@ page 50103 "Interface Mapping ListPart"
                 {
                     ApplicationArea = All;
                 }
+                field("Reference Name"; "Reference Name")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

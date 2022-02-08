@@ -12,8 +12,9 @@ codeunit 50101 "Interface Function Handler"
         gRegistrationMode: Boolean;
         gCalculatedValue: Text;
         gFuncCode: Code[50];
-        gParam1RecRef: RecordRef;
         gLineRecRef: RecordRef;
+        gSalesHdr: Record "Sales Header";
+        gSalesLine: Record "Sales Line";
 
     local procedure RegisterFunctions()
     var
@@ -37,6 +38,26 @@ codeunit 50101 "Interface Function Handler"
         InsertInterfaceFunctionRec('Custpartytaxschemecompanyid', 'Get Custpartytaxschemecompanyid');
         InsertInterfaceFunctionRec('CustPartyTaxSchemeCompIDSchID', 'Get CustPartyTaxSchemeCompIDSchID');
         InsertInterfaceFunctionRec('CustContactName', 'Get Customer Contact Name');
+        InsertInterfaceFunctionRec('DeliveryID', 'Get Delivery ID');
+        InsertInterfaceFunctionRec('DeliveryIDSchemeID', 'Get Delivery ID Scheme ID');
+        InsertInterfaceFunctionRec('Payeefinancialaccountid', 'Get Payee financial accountid');
+        InsertInterfaceFunctionRec('FinancialInstitutionBranchID', 'Get financial institution branch id');
+        InsertInterfaceFunctionRec('PaymentTermsNote', 'Get Payment Terms Note');
+        InsertInterfaceFunctionRec('TaxTotal', 'Get Tax Total');
+        InsertInterfaceFunctionRec('TaxTotalCurrencyID', 'Get Tax Total Currency ID');
+        InsertInterfaceFunctionRec('LineExtensionAmount', 'Get Line Extension Amount');
+        InsertInterfaceFunctionRec('TaxExclusiveAmount', 'Get Tax Exclusive Amount');
+        InsertInterfaceFunctionRec('TaxInclusiveAmount', 'Get Tax Inclusive amount');
+        InsertInterfaceFunctionRec('AllowanceTotalAmount', 'Get Allowance Total Amount');
+        InsertInterfaceFunctionRec('PayableRoundingAmount', 'Get Payable Rounding Amount');
+        InsertInterfaceFunctionRec('PayableAmount', 'Get Payable Amount');
+        InsertInterfaceFunctionRec('UnitCode', 'Get Unit Code');
+        InsertInterfaceFunctionRec('Invoicelineextensionamount', 'Get Invoice Line Extension Amount');
+        InsertInterfaceFunctionRec('SalesDocCurrencyCode', 'Get Currency Code');
+        InsertInterfaceFunctionRec('Classifiedtaxcategoryid', 'Get Classified Tax Category Id');
+        InsertInterfaceFunctionRec('Invoicelinetaxpercent', 'Get Invoice Line Tax Percent');
+        InsertInterfaceFunctionRec('Classifiedtaxcategorytaxscheme', 'Get Classified Tax Category Tax Scheme');
+        InsertInterfaceFunctionRec('Invoicelinepriceamount', 'Get Invoice Line Price Amount');
     end;
 
     local procedure InsertInterfaceFunctionRec(FuncCode: Code[50]; Desc: Text[250])
@@ -49,10 +70,9 @@ codeunit 50101 "Interface Function Handler"
         IntFuncRec.Insert();
     end;
 
-    local procedure ExecuteCode(FunctionCode: Code[20])
+    local procedure ExecuteCode(FunctionCode: Code[50])
     var
         IntFuncMgt: Codeunit "Interface Function Mgt.";
-        SalesHdr: Record "Sales Header";
     begin
         case FunctionCode of
             'SupplierEndPointIdBIS':
@@ -60,79 +80,75 @@ codeunit 50101 "Interface Function Handler"
             'SupplierSchemeIdBIS':
                 IntFuncMgt.SupplierSchemeId(gCalculatedValue);
             'DocumentCurrencyCode':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetSalesDocCurrencyCode(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetSalesDocCurrencyCode(gSalesHdr, gCalculatedValue);
             'StreetName':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetStreetName(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetStreetName(gSalesHdr, gCalculatedValue);
             'AdditionalStreetName':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetAdditionalStreetName(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetAdditionalStreetName(gSalesHdr, gCalculatedValue);
             'CityName':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCityName(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCityName(gSalesHdr, gCalculatedValue);
             'PostalZone':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetPostalZone(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetPostalZone(gSalesHdr, gCalculatedValue);
             'CountrySubentity':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCountySubentity(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCountySubentity(gSalesHdr, gCalculatedValue);
             'IdentificationCode':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCountySubentity(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCountySubentity(gSalesHdr, gCalculatedValue);
             'CompanyID':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCompanyID(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCompanyID(gSalesHdr, gCalculatedValue);
             'TaxSchemeID':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetTaxSchemeID(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetTaxSchemeID(gSalesHdr, gCalculatedValue);
             'PartyLegalEntitySchemeID':
-                begin
-                    IntFuncMgt.GetPartyLegalEntitySchemeID(gCalculatedValue);
-                end;
+                IntFuncMgt.GetPartyLegalEntitySchemeID(gCalculatedValue);
             'CustomerEndpointIDBIS':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCustomerEndpointIDBIS(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCustomerEndpointIDBIS(gSalesHdr, gCalculatedValue);
             'CustomerSchemeIDBIS':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCustomerSchemeIDBIS(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCustomerSchemeIDBIS(gSalesHdr, gCalculatedValue);
             'Custpartytaxschemecompanyid':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCustPartySchemeCompID(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCustPartySchemeCompID(gSalesHdr, gCalculatedValue);
             'CustPartyTaxSchemeCompIDSchID':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.GetCustPartyTaxSchemeCompIDSchID(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.GetCustPartyTaxSchemeCompIDSchID(gSalesHdr, gCalculatedValue);
             'CustContactName':
-                begin
-                    gParam1RecRef.SetTable(SalesHdr);
-                    IntFuncMgt.Getcustcontactname(SalesHdr, gCalculatedValue);
-                end;
+                IntFuncMgt.Getcustcontactname(gSalesHdr, gCalculatedValue);
+            'DeliveryID':
+                IntFuncMgt.GetDeliveryID(gSalesHdr, gCalculatedValue);
+            'DeliveryIDSchemeID':
+                IntFuncMgt.GetDeliveryIDSchemeID(gSalesHdr, gCalculatedValue);
+            'Payeefinancialaccountid':
+                IntFuncMgt.GetPayeeFinancialAccountID(gCalculatedValue);
+            'FinancialInstitutionBranchID':
+                IntFuncMgt.GetFinancialInstitutionBranchID(gCalculatedValue);
+            'PaymentTermsNote':
+                IntFuncMgt.GetPaymenttermsnote(gSalesHdr, gCalculatedValue);
+            'TaxTotal':
+                IntFuncMgt.GetTaxTotal(gSalesHdr, gCalculatedValue);
+            'TaxTotalCurrencyID':
+                IntFuncMgt.GetTaxTotalCurrencyID(gSalesHdr, gCalculatedValue);
+            'LineExtensionAmount':
+                IntFuncMgt.GetLineExtensionAmount(gSalesHdr, gCalculatedValue);
+            'TaxExclusiveAmount':
+                IntFuncMgt.GetTaxExclusiveAmount(gSalesHdr, gCalculatedValue);
+            'TaxInclusiveAmount':
+                IntFuncMgt.GetTaxInclusiveAmount(gSalesHdr, gCalculatedValue);
+            'AllowanceTotalAmount':
+                IntFuncMgt.GetAllowanceTotalAmount(gSalesHdr, gCalculatedValue);
+            'PayableRoundingAmount':
+                IntFuncMgt.GetPayableRoundingAmount(gSalesHdr, gCalculatedValue);
+            'PayableAmount':
+                IntFuncMgt.GetPayableAmount(gSalesHdr, gCalculatedValue);
+            'UnitCode':
+                IntFuncMgt.GetunitCode(gSalesLine, gCalculatedValue);
+            'Invoicelineextensionamount':
+                IntFuncMgt.GetInvoiceLineExtensionAmount(gSalesLine, gCalculatedValue);
+            'SalesDocCurrencyCode':
+                IntFuncMgt.GetSalesDocCurrencyCode(gSalesHdr, gCalculatedValue);
+            'Classifiedtaxcategoryid':
+                IntFuncMgt.Getclassifiedtaxcategoryid(gSalesLine, gCalculatedValue);
+            'Invoicelinetaxpercent':
+                IntFuncMgt.GetInvoicelinetaxpercent(gSalesLine, gCalculatedValue);
+            'Classifiedtaxcategorytaxscheme':
+                IntFuncMgt.GetClassifiedtaxcategorytaxscheme(gSalesLine, gCalculatedValue);
+            'Invoicelinepriceamount':
+                IntFuncMgt.GetInvoiceLinePriceAmount(gSalesLine, gCalculatedValue);
         end
     end;
 
@@ -146,10 +162,25 @@ codeunit 50101 "Interface Function Handler"
         exit(gCalculatedValue);
     end;
 
-    procedure SetGlobals(FuncCode: Code[20]; Param1RecRef: RecordRef)
+    procedure SetGlobals(FuncCode: Code[50]; Param1RecRef: RecordRef)
+    var
+        SalesInvHdr: Record "Sales Invoice Header";
+        SalesInvLine: Record "Sales Invoice Line";
     begin
         gFuncCode := FuncCode;
-        gParam1RecRef := Param1RecRef;
+
+        case Param1RecRef.Number of
+            Database::"Sales Invoice Header":
+                begin
+                    Param1RecRef.SetTable(SalesInvHdr);
+                    gSalesHdr.TransferFields(SalesInvHdr)
+                end;
+            Database::"Sales Invoice Line":
+                begin
+                    Param1RecRef.SetTable(SalesInvLine);
+                    gSalesLine.TransferFields(SalesInvLine);
+                end;
+        end
     end;
 
 }

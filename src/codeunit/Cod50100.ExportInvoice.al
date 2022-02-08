@@ -35,12 +35,14 @@ codeunit 50100 "Export Invoice"
         CurrNodeValue: Text;
         i: Integer;
     begin
-        InterfaceHdrRecord.Get('DEMO');
+        InterfaceHdrRecord.Get('PEPPOL3');
         XmlDocument.ReadFrom(GetInvoiceHeader(), XMLdocOut);
         XMLdocOut.GetRoot(RootNode);
         TableReferenceIndex := 1;
         HeaderRecordRef.Open(Database::"Sales Invoice Header");
         HeaderRecordRef.GetTable(SalesInvHeader);
+
+        ExportMapping.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
         ExportMapping.SetRange(Level, 0);
         If ExportMapping.FindFirst() then begin
             TableReferences[TableReferenceIndex].Open(ExportMapping."Table No.");
@@ -48,15 +50,14 @@ codeunit 50100 "Export Invoice"
             TableLinkIndexes.Add(ExportMapping."Node Name", TableReferenceIndex);
         end;
 
+        ExportMapping.SetRange("Interface Code", InterfaceHdrRecord."Interface Code");
         ExportMapping.SetRange(Level, 1);
         if ExportMapping.FindSet() then
             repeat
                 if ExportMapping.Parent then
                     CreateParentElements(ExportMapping, RootNode)
                 else begin
-                    Clear(XmlCurrNode);
-                    CreateChildElement(ExportMapping, XmlCurrNode);
-                    RootNode.Add(XmlCurrNode);
+                    CreateChildElement(ExportMapping, RootNode);
                 end;
             until ExportMapping.Next() = 0;
         TempBLOB.CreateOutStream(outs);
@@ -136,6 +137,7 @@ codeunit 50100 "Export Invoice"
                     else
                         XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
                     AddAttributes(XmlCurrNode, pInterfaceLine);
+                    lInterfaceLine.SetRange("Interface Code", pInterfaceLine."Interface Code");
                     lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
                     if lInterfaceLine.FindSet() then
                         repeat
@@ -152,6 +154,7 @@ codeunit 50100 "Export Invoice"
                 XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace)
             else
                 XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+            lInterfaceLine.SetRange("Interface Code", pInterfaceLine."Interface Code");
             lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
             if lInterfaceLine.FindSet() then
                 repeat
@@ -180,10 +183,11 @@ codeunit 50100 "Export Invoice"
                 CurrNodeValue := GetFunctionElementValue(pInterfaceLine);
         end;
         if pInterfaceLine."Xml Name" <> '' then
-            XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace, CurrNodeValue))
+            XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace, CurrNodeValue)
         else
-            XmlCurrNode.Add(XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue));
+            XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace, CurrNodeValue);
         AddAttributes(XmlCurrNode, pInterfaceLine);
+        ParentNode.Add(XmlCurrNode);
     end;
 
     local procedure GetTableReferenceWithName(ReferenceName: Text[30]; var CurrRecordRef: RecordRef)
@@ -232,12 +236,17 @@ codeunit 50100 "Export Invoice"
 
     local procedure GetFunctionElementValue(InterfaceLine: Record "Interface Line") TransformedValue: Text
     var
-        FuncCodeHandler: Codeunit "Interface Function Handler";
         TransformationRule: Record "Transformation Rule";
         SalesHeader: Record "Sales Header";
+        CurrRecordRef: RecordRef;
+        FuncCodeHandler: Codeunit "Interface Function Handler";
     begin
         if InterfaceLine.Source <> '' then begin
-            FuncCodeHandler.SetGlobals(InterfaceLine.Source, HeaderRecordRef);
+            if InterfaceLine."Reference Name" <> '' then begin
+                GetTableReferenceWithName(InterfaceLine."Reference Name", CurrRecordRef);
+                FuncCodeHandler.SetGlobals(InterfaceLine.Source, CurrRecordRef);
+            end else
+                FuncCodeHandler.SetGlobals(InterfaceLine.Source, HeaderRecordRef);
             FuncCodeHandler.Run();
             TransformedValue := FuncCodeHandler.GetCalculatedValue();
             if TransformationRule.Get(InterfaceLine."Transformation Rule") then
@@ -299,6 +308,7 @@ codeunit 50100 "Export Invoice"
     var
         IntLineAttributes: Record "Interface Line Attributes";
         FuncCodeHandler: Codeunit "Interface Function Handler";
+        CurrRecordRef: RecordRef;
     begin
         IntLineAttributes.SetRange("Interface Code", InterfaceLine."Interface Code");
         IntLineAttributes.SetRange("Line No.", InterfaceLine."Line No.");
@@ -316,7 +326,11 @@ codeunit 50100 "Export Invoice"
                     IntLineAttributes."Attribute Type"::"Function Element":
                         begin
                             if IntLineAttributes."Attribute Value" <> '' then begin
-                                FuncCodeHandler.SetGlobals(IntLineAttributes."Attribute Value", HeaderRecordRef);
+                                if IntLineAttributes."Reference Name" <> '' then begin
+                                    GetTableReferenceWithName(IntLineAttributes."Reference Name", CurrRecordRef);
+                                    FuncCodeHandler.SetGlobals(IntLineAttributes."Attribute Value", CurrRecordRef);
+                                end else
+                                    FuncCodeHandler.SetGlobals(IntLineAttributes."Attribute Value", HeaderRecordRef);
                                 FuncCodeHandler.Run();
                                 CurrNode.SetAttribute(IntLineAttributes."Attribute Key", FuncCodeHandler.GetCalculatedValue());
                             end;

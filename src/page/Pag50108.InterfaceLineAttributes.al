@@ -26,6 +26,10 @@ page 50108 "Interface Line Attributes"
                     ToolTip = 'Specifies the value of the Attribute Value field.';
                     ApplicationArea = All;
                 }
+                field("Reference Name"; Rec."Reference Name")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

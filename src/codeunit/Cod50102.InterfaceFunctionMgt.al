@@ -3,8 +3,6 @@ codeunit 50102 "Interface Function Mgt."
     var
         GLNTxt: Label 'GLN', Locked = true;
         VATTxt: Label 'VAT', Locked = true;
-        TempVATAmtLine: Record "VAT Amount Line" temporary;
-        TempVATProductPostingGroup: Record "VAT Product Posting Group" temporary;
 
     procedure SupplierEndPointIdBIS(var CalcValue: Text)
     var
@@ -43,8 +41,8 @@ codeunit 50102 "Interface Function Mgt."
             GLSetup.Get();
             GLSetup.TestField("LCY Code");
             CalcValue := Format(GLSetup."LCY Code");
-        end;
-        CalcValue := Format(SalesHeader."Currency Code");
+        end else
+            CalcValue := Format(SalesHeader."Currency Code");
     end;
 
     procedure GetStreetName(SalesHeader: Record "Sales Header"; var CalcValue: Text)
@@ -117,6 +115,8 @@ codeunit 50102 "Interface Function Mgt."
     var
         SalesInvoiceLine: Record "Sales Invoice Line";
         SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        TempVATProductPostingGroup: Record "VAT Product Posting Group" temporary;
         PEPPOLMgt: Codeunit "Peppol Management";
         CompanyID: Text;
         CompanyIDSchemeID: Text;
@@ -141,6 +141,8 @@ codeunit 50102 "Interface Function Mgt."
     var
         SalesInvoiceLine: Record "Sales Invoice Line";
         SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        TempVATProductPostingGroup: Record "VAT Product Posting Group" temporary;
         PEPPOLMgt: Codeunit "Peppol Management";
         CompanyID: Text;
         CompanyIDSchemeID: Text;
@@ -241,6 +243,322 @@ codeunit 50102 "Interface Function Mgt."
             CalcValue := SalesHeader."Bill-to Contact"
         else
             CalcValue := SalesHeader."Bill-to Name";
+    end;
+
+    procedure GetDeliveryID(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        ActualDeliveryDate: Text;
+        DeliveryID: Text;
+        DeliveryIDSchemeID: Text;
+    begin
+        PEPPOLMgt.GetGLNDeliveryInfo(
+            SalesHeader,
+            ActualDeliveryDate,
+            DeliveryID,
+            DeliveryIDSchemeID);
+        CalcValue := DeliveryID;
+    end;
+
+    procedure GetDeliveryIDSchemeID(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        ActualDeliveryDate: Text;
+        DeliveryID: Text;
+        DeliveryIDSchemeID: Text;
+    begin
+        PEPPOLMgt.GetGLNDeliveryInfo(
+            SalesHeader,
+            ActualDeliveryDate,
+            DeliveryID,
+            DeliveryIDSchemeID);
+        CalcValue := DeliveryIDSchemeID;
+    end;
+
+    procedure GetPayeeFinancialAccountID(var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        PayeeFinancialAccountID: Text;
+        FinancialInstitutionBranchID: Text;
+    begin
+        PEPPOLMgt.GetPaymentMeansPayeeFinancialAccBIS(
+            PayeeFinancialAccountID,
+            FinancialInstitutionBranchID);
+        CalcValue := PayeeFinancialAccountID;
+    end;
+
+    procedure GetFinancialInstitutionBranchID(var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        PayeeFinancialAccountID: Text;
+        FinancialInstitutionBranchID: Text;
+    begin
+        PEPPOLMgt.GetPaymentMeansPayeeFinancialAccBIS(
+            PayeeFinancialAccountID,
+            FinancialInstitutionBranchID);
+        CalcValue := FinancialInstitutionBranchID;
+    end;
+
+    procedure GetPaymenttermsnote(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        PEPPOLMgt.GetPaymentTermsInfo(
+                    SalesHeader,
+                    CalcValue);
+    end;
+
+    procedure GetTaxTotal(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        TaxTotalCurrencyID: Text;
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        PEPPOLMgt.GetTaxTotalInfo(
+          SalesHeader,
+          TempVATAmtLine,
+          CalcValue,
+          TaxTotalCurrencyID);
+    end;
+
+    procedure GetTaxTotalCurrencyID(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        TaxTotal: Text;
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        PEPPOLMgt.GetTaxTotalInfo(
+          SalesHeader,
+          TempVATAmtLine,
+          TaxTotal,
+          CalcValue);
+    end;
+
+    procedure GetLineExtensionAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(Round(TempVATAmtLine."VAT Base", 0.01) + Round(TempVATAmtLine."Invoice Discount Amount", 0.01), 0, 9);
+    end;
+
+    procedure GetTaxExclusiveAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(Round(TempVATAmtLine."VAT Base", 0.01), 0, 9);
+    end;
+
+    procedure GetTaxInclusiveAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(Round(TempVATAmtLine."Amount Including VAT", 0.01, '>'), 0, 9);
+    end;
+
+    procedure GetAllowanceTotalAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(Round(TempVATAmtLine."Invoice Discount Amount", 0.01), 0, 9);
+    end;
+
+    procedure GetPayableRoundingAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(TempVATAmtLine."Amount Including VAT" - Round(TempVATAmtLine."Amount Including VAT", 0.01), 0, 9);
+    end;
+
+    procedure GetPayableAmount(SalesHeader: Record "Sales Header"; var CalcValue: Text)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+        TempVATAmtLine.Reset();
+        TempVATAmtLine.CalcSums("Line Amount", "VAT Base", "Amount Including VAT", "Invoice Discount Amount");
+
+        CalcValue := Format(Round(TempVATAmtLine."Amount Including VAT", 0.01), 0, 9);
+    end;
+
+    procedure GetunitCode(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        DummyVar: Text;
+    begin
+        PEPPOLMgt.GetLineUnitCodeInfo(SalesLine, CalcValue, DummyVar);
+    end;
+
+    procedure GetInvoiceLineExtensionAmount(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    begin
+        CalcValue := Format(SalesLine."VAT Base Amount" + SalesLine."Inv. Discount Amount", 0, 9);
+    end;
+
+    procedure GetSalesDocCurrencyCode(SalesHeader: Record "Sales Header"): Code[10]
+    var
+        GLSetup: Record "General Ledger Setup";
+    begin
+        if SalesHeader."Currency Code" = '' then begin
+            GLSetup.Get();
+            GLSetup.TestField("LCY Code");
+            exit(GLSetup."LCY Code");
+        end;
+        exit(SalesHeader."Currency Code");
+    end;
+
+    procedure Getclassifiedtaxcategoryid(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        DummyVar: Text;
+        InvoiceLineTaxPercent: Text;
+        ClassifiedTaxCategorySchemeID: text;
+    begin
+        PEPPOLMgt.GetLineItemClassfiedTaxCategoryBIS(
+            SalesLine,
+            CalcValue,
+            DummyVar,
+            InvoiceLineTaxPercent,
+            ClassifiedTaxCategorySchemeID);
+    end;
+
+    procedure GetInvoicelinetaxpercent(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        DummyVar: Text;
+        Classifiedtaxcategoryid: Text;
+        ClassifiedTaxCategorySchemeID: text;
+    begin
+        PEPPOLMgt.GetLineItemClassfiedTaxCategoryBIS(
+            SalesLine,
+            Classifiedtaxcategoryid,
+            DummyVar,
+            CalcValue,
+            ClassifiedTaxCategorySchemeID);
+    end;
+
+    procedure GetClassifiedtaxcategorytaxscheme(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+        DummyVar: Text;
+        InvoiceLineTaxPercent: Text;
+        Classifiedtaxcategoryid: text;
+    begin
+        PEPPOLMgt.GetLineItemClassfiedTaxCategoryBIS(
+            SalesLine,
+            Classifiedtaxcategoryid,
+            DummyVar,
+            InvoiceLineTaxPercent,
+            CalcValue);
+    end;
+
+    procedure GetInvoiceLinePriceAmount(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        SalesInvHeader: Record "Sales Invoice Header";
+        SalesCrHeader: Record "Sales Cr.Memo Header";
+        SalesHeader: Record "Sales Header";
+        unitCodeListID: Text;
+        VATBaseIdx: Decimal;
+        InvoiceLinePriceAmount: Text;
+    begin
+        if SalesLine."Document Type" = SalesLine."Document Type"::Invoice then begin
+            SalesInvHeader.Get(SalesLine."Document Type"::Invoice, SalesLine."Document No.");
+            SalesHeader.TransferFields(SalesInvHeader);
+        end else
+            if SalesLine."Document Type" = SalesLine."Document Type"::"Credit Memo" then begin
+                SalesCrHeader.Get(SalesLine."Document Type"::"Credit Memo", SalesLine."Document No.");
+                SalesHeader.TransferFields(SalesCrHeader);
+            end;
+
+        if SalesHeader."Prices Including VAT" then begin
+            VATBaseIdx := 1 + SalesLine."VAT %" / 100;
+            InvoiceLinePriceAmount := Format(Round(SalesLine."Unit Price" / VATBaseIdx), 0, 9)
+        end else
+            InvoiceLinePriceAmount := Format(SalesLine."Unit Price", 0, 9);
+
+        CalcValue := InvoiceLinePriceAmount;
     end;
 
     local procedure FormatVATRegistrationNo(VATRegistrationNo: Text; CountryCode: Code[10]; IsBISBilling: Boolean; IsPartyTaxScheme: Boolean): Text
