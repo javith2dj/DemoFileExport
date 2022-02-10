@@ -58,6 +58,8 @@ codeunit 50101 "Interface Function Handler"
         InsertInterfaceFunctionRec('Invoicelinetaxpercent', 'Get Invoice Line Tax Percent');
         InsertInterfaceFunctionRec('Classifiedtaxcategorytaxscheme', 'Get Classified Tax Category Tax Scheme');
         InsertInterfaceFunctionRec('Invoicelinepriceamount', 'Get Invoice Line Price Amount');
+        InsertInterfaceFunctionRec('SubTotalTaxAmount', 'Get SubTotal Tax Amount');
+        InsertInterfaceFunctionRec('TransactionCurrencyTaxAmount', 'Get Transaction Currency Tax Amount');
     end;
 
     local procedure InsertInterfaceFunctionRec(FuncCode: Code[50]; Desc: Text[250])
@@ -149,6 +151,10 @@ codeunit 50101 "Interface Function Handler"
                 IntFuncMgt.GetClassifiedtaxcategorytaxscheme(gSalesLine, gCalculatedValue);
             'Invoicelinepriceamount':
                 IntFuncMgt.GetInvoiceLinePriceAmount(gSalesLine, gCalculatedValue);
+            'SubTotalTaxAmount':
+                IntFuncMgt.GetSubtotaltaxamount(gSalesLine, gCalculatedValue);
+            'TransactionCurrencyTaxAmount':
+                IntFuncMgt.GetTransactionCurrencyTaxAmount(gSalesLine, gCalculatedValue);
         end
     end;
 

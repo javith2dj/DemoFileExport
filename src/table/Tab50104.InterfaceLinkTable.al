@@ -105,7 +105,7 @@ table 50104 "Interface Link Table"
     }
     keys
     {
-        key(pk; "Interface Code", "Parent Table No.", "Link Table No.", "Parent Field No.", "Link Field No.")
+        key(pk; "Interface Code", "Parent Table No.", "Link Table No.", "Parent Field No.", "Link Field No.", "Parent Reference Name")
         {
             Clustered = true;
         }

@@ -22,7 +22,7 @@ table 50100 "Interface Line"
         {
 
         }
-        field(6; Source; Text[50])
+        field(6; Source; Text[500])
         {
             trigger OnLookup()
             var

@@ -561,6 +561,51 @@ codeunit 50102 "Interface Function Mgt."
         CalcValue := InvoiceLinePriceAmount;
     end;
 
+    procedure GetSubtotaltaxamount(SalesLine: Record "Sales Line"; var CalcValue: Text)
+
+    var
+        SalesHEader: Record "Sales Header";
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+
+        SalesInvoiceLine.SetRange("Document No.", SalesLine."Document No.");
+        SalesInvoiceLine.SetRange("Line No.", SalesLine."Line No.");
+        if SalesInvoiceLine.Findfirst then begin
+            SalesLine.TransferFields(SalesInvoiceLine);
+            PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            CalcValue := Format(TempVATAmtLine."VAT Amount", 0, 9);
+        end;
+    end;
+
+    procedure GetTransactionCurrencyTaxAmount(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        SalesHEader: Record "Sales Header";
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        GLSetup: Record "General Ledger Setup";
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+
+        SalesInvoiceLine.SetRange("Document No.", SalesLine."Document No.");
+        SalesInvoiceLine.SetRange("Line No.", SalesLine."Line No.");
+        if SalesInvoiceLine.Findfirst then begin
+            SalesLine.TransferFields(SalesInvoiceLine);
+            PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            GLSetup.Get();
+            if GLSetup."LCY Code" <> GetSalesDocCurrencyCode(SalesHeader) then begin
+                CalcValue :=
+                  Format(
+                    TempVATAmtLine.GetAmountLCY(
+                      SalesHeader."Posting Date",
+                      GetSalesDocCurrencyCode(SalesHeader),
+                      SalesHeader."Currency Factor"), 0, 9);
+                CalcValue := GLSetup."LCY Code";
+            end;
+        end;
+    end;
+
     local procedure FormatVATRegistrationNo(VATRegistrationNo: Text; CountryCode: Code[10]; IsBISBilling: Boolean; IsPartyTaxScheme: Boolean): Text
     var
         CountryRegion: Record "Country/Region";
@@ -608,6 +653,7 @@ codeunit 50102 "Interface Function Mgt."
     local procedure GetCountryISOCode(CountryRegionCode: Code[10]): Code[2]
     var
         CountryRegion: Record "Country/Region";
+
     begin
         CountryRegion.Get(CountryRegionCode);
         exit(CountryRegion."ISO Code");
