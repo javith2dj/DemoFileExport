@@ -58,6 +58,10 @@ page 50103 "Interface Mapping ListPart"
                     ToolTip = 'Specifies the value of the Parent Node Name field.';
                     ApplicationArea = All;
                 }
+                field("Not Blank"; "Not Blank")
+                {
+                    ApplicationArea = All;
+                }
                 field("Xml Name"; "Xml Name")
                 {
                     ApplicationArea = All;

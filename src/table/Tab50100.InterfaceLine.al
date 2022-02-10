@@ -150,6 +150,26 @@ table 50100 "Interface Line"
         {
             Caption = 'XML Name';
         }
+        field(22; "Not Blank"; Boolean)
+        {
+            Caption = 'Not Blank';
+
+            trigger OnValidate()
+            var
+                lInterfaceLine: Record "Interface Line";
+            begin
+                If Rec.Parent then begin
+                    lInterfaceLine.SetRange("Interface Code", Rec."Interface Code");
+                    lInterfaceLine.SetRange("Parent Node Name", Rec."Node Name");
+                    if lInterfaceLine.FindSet(true, false) then
+                        repeat
+                            lInterfaceLine."Not Blank" := true;
+                            lInterfaceLine.Modify();
+                        until lInterfaceLine.Next() = 0;
+
+                end;
+            end;
+        }
     }
 
     keys

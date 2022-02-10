@@ -154,15 +154,18 @@ codeunit 50100 "Export Invoice"
                 XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace)
             else
                 XmlCurrNode := XmlElement.Create(pInterfaceLine."Node Name", IntNamespace.Namespace);
+
             lInterfaceLine.SetRange("Interface Code", pInterfaceLine."Interface Code");
             lInterfaceLine.SetRange("Parent Node Name", pInterfaceLine."Node Name");
             if lInterfaceLine.FindSet() then
                 repeat
-                    if lInterfaceLine.Parent then
+                    if lInterfaceLine.Parent then begin
                         CreateParentElements(lInterfaceLine, XmlCurrNode)
-                    else
+                    end else
                         CreateChildElement(lInterfaceLine, XmlCurrNode);
                 until lInterfaceLine.Next() = 0;
+            if not XmlCurrNode.HasElements and pInterfaceLine."Not Blank" then
+                exit;
             ParentNode.Add(XmlCurrNode);
         end;
     end;
@@ -182,6 +185,10 @@ codeunit 50100 "Export Invoice"
             pInterfaceLine."Node Type"::"Function Element":
                 CurrNodeValue := GetFunctionElementValue(pInterfaceLine);
         end;
+
+        if pInterfaceLine."Not Blank" and (CurrNodeValue = '') then
+            exit;
+
         if pInterfaceLine."Xml Name" <> '' then
             XmlCurrNode := XmlElement.Create(pInterfaceLine."Xml Name", IntNamespace.Namespace, CurrNodeValue)
         else
