@@ -606,6 +606,40 @@ codeunit 50102 "Interface Function Mgt."
         end;
     end;
 
+    procedure GetTaxtotaltaxcategoryid(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        SalesHEader: Record "Sales Header";
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesLine."Document No.");
+        SalesInvoiceLine.SetRange("Line No.", SalesLine."Line No.");
+        if SalesInvoiceLine.Findfirst then begin
+            SalesLine.TransferFields(SalesInvoiceLine);
+            PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            CalcValue := TempVATAmtLine."Tax Category";
+        end;
+    end;
+
+    procedure GetTaxExemptionReason(SalesLine: Record "Sales Line"; var CalcValue: Text)
+    var
+        SalesHEader: Record "Sales Header";
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        TempVATProductPostingGroup: Record "VAT Product Posting Group";
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+        SalesInvoiceLine.SetRange("Document No.", SalesLine."Document No.");
+        SalesInvoiceLine.SetRange("Line No.", SalesLine."Line No.");
+        if SalesInvoiceLine.Findfirst then begin
+            SalesLine.TransferFields(SalesInvoiceLine);
+            PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            PEPPOLMgt.GetTaxCategories(SalesLine, TempVATProductPostingGroup);
+            PEPPOLMgt.GetTaxExemptionReason(TempVATProductPostingGroup, CalcValue, TempVATAmtLine."Tax Category");
+        end;
+    end;
+
     local procedure FormatVATRegistrationNo(VATRegistrationNo: Text; CountryCode: Code[10]; IsBISBilling: Boolean; IsPartyTaxScheme: Boolean): Text
     var
         CountryRegion: Record "Country/Region";
