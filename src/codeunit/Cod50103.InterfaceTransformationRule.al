@@ -8,6 +8,8 @@ codeunit 50103 "Interface Transformation Rule"
                 XMLFormat(InputText, OutputText);
             'XMLDATEFORMAT':
                 XMLDateFormat(InputText, OutputText);
+            'XMLDECIMALFORMAT':
+                XMLDecimalFormat(InputText, OutputText);
         end
     end;
 
@@ -22,6 +24,14 @@ codeunit 50103 "Interface Transformation Rule"
     begin
         Evaluate(CurrDate, InputText);
         OutputText := Format(CurrDate, 0, 9);
+    end;
+
+    local procedure XMLDecimalFormat(InputText: Text; var OutputText: Text)
+    var
+        CurrDecimal: Decimal;
+    begin
+        Evaluate(CurrDecimal, InputText);
+        OutputText := Format(CurrDecimal, 0, 9);
     end;
 
 }

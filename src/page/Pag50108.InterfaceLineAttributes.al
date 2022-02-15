@@ -30,6 +30,10 @@ page 50108 "Interface Line Attributes"
                 {
                     ApplicationArea = All;
                 }
+                field("Not Blank"; Rec."Not Blank")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

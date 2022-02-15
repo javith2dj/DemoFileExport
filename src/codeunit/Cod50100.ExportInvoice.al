@@ -268,8 +268,6 @@ codeunit 50100 "Export Invoice"
         NegativeSignIdentifier: Text;
     begin
         TransformedValue := FieldRef.Value;
-        if TransformationRule.Get(InterfaceLine."Transformation Rule") then
-            TransformedValue := TransformationRule.TransformText(FieldRef.Value);
 
         case FieldRef.Type of
             FieldType::Date:
@@ -277,12 +275,15 @@ codeunit 50100 "Export Invoice"
             FieldType::Decimal:
                 if InterfaceLine."Negative-Sign Identifier" = '' then begin
                     SetDateDecimalField(TransformedValue, InterfaceLine, FieldRef);
-                    AdjustDecimalWithMultiplier(FieldRef, InterfaceLine.Multiplier, TransformedValue);
+                    AdjustDecimalWithMultiplier(InterfaceLine.Multiplier, TransformedValue);
                 end else begin
                     NegativeSignIdentifier := InterfaceLine."Negative-Sign Identifier";
-                    TransformedValue := NegativeSignIdentifier + Format(FieldRef.Value());
+                    TransformedValue := NegativeSignIdentifier + TransformedValue;
                 end;
         end;
+
+        if TransformationRule.Get(InterfaceLine."Transformation Rule") then
+            TransformedValue := TransformationRule.TransformText(TransformedValue);
     end;
 
     local procedure SetDateDecimalField(var ValueText: Text; InterfaceLine: Record "Interface Line"; var FieldRef: FieldRef)
@@ -303,11 +304,11 @@ codeunit 50100 "Export Invoice"
         ValueText := Format(Value);
     end;
 
-    local procedure AdjustDecimalWithMultiplier(var FieldRef: FieldRef; Multiplier: Decimal; var ValueText: Text)
+    local procedure AdjustDecimalWithMultiplier(Multiplier: Decimal; var ValueText: Text)
     var
         DecimalValue: Decimal;
     begin
-        DecimalValue := FieldRef.Value();
+        Evaluate(DecimalValue, ValueText);
         ValueText := Format(Multiplier * DecimalValue);
     end;
 
@@ -316,6 +317,7 @@ codeunit 50100 "Export Invoice"
         IntLineAttributes: Record "Interface Line Attributes";
         FuncCodeHandler: Codeunit "Interface Function Handler";
         CurrRecordRef: RecordRef;
+        AttributeValue: Text;
     begin
         IntLineAttributes.SetRange("Interface Code", InterfaceLine."Interface Code");
         IntLineAttributes.SetRange("Line No.", InterfaceLine."Line No.");
@@ -324,11 +326,11 @@ codeunit 50100 "Export Invoice"
                 case IntLineAttributes."Attribute Type" of
                     IntLineAttributes."Attribute Type"::"Text Element":
                         begin
-                            CurrNode.SetAttribute(IntLineAttributes."Attribute Key", IntLineAttributes."Attribute Value");
+                            AttributeValue := IntLineAttributes."Attribute Value";
                         end;
                     IntLineAttributes."Attribute Type"::"Field Element":
                         begin
-                            CurrNode.SetAttribute(IntLineAttributes."Attribute Key", GetAttributeFieldElementValue(IntLineAttributes));
+                            AttributeValue := GetAttributeFieldElementValue(IntLineAttributes);
                         end;
                     IntLineAttributes."Attribute Type"::"Function Element":
                         begin
@@ -339,10 +341,13 @@ codeunit 50100 "Export Invoice"
                                 end else
                                     FuncCodeHandler.SetGlobals(IntLineAttributes."Attribute Value", HeaderRecordRef);
                                 FuncCodeHandler.Run();
-                                CurrNode.SetAttribute(IntLineAttributes."Attribute Key", FuncCodeHandler.GetCalculatedValue());
+                                AttributeValue := FuncCodeHandler.GetCalculatedValue();
                             end;
                         end;
-                end
+                end;
+
+                if not ((AttributeValue = '') and IntLineAttributes."Not Blank") then
+                    CurrNode.SetAttribute(IntLineAttributes."Attribute Key", AttributeValue);
             until IntLineAttributes.Next() = 0;
     end;
 

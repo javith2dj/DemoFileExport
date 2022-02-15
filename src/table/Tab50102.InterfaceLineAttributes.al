@@ -94,6 +94,10 @@ table 50102 "Interface Line Attributes"
         {
 
         }
+        field(10; "Not Blank"; Boolean)
+        {
+
+        }
     }
     keys
     {

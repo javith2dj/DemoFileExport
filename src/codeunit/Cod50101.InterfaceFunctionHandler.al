@@ -161,6 +161,8 @@ codeunit 50101 "Interface Function Handler"
                 IntFuncMgt.GetTransactionCurrencyTaxAmount(gSalesLine, gCalculatedValue);
             'TaxTotalTaxCategoryId':
                 IntFuncMgt.GetTaxtotaltaxcategoryid(gSalesLine, gCalculatedValue);
+            'TaxExemptionReason':
+                IntFuncMgt.GetTaxExemptionReason(gSalesLine, gCalculatedValue);
         end
     end;
 
