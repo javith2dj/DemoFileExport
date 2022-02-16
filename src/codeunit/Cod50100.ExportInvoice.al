@@ -110,6 +110,8 @@ codeunit 50100 "Export Invoice"
         If (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Table Element") then begin
             TableReferenceIndex += 1;
             TableReferences[TableReferenceIndex].Open(pInterfaceLine."Table No.");
+
+
             TableLinkRec.SetRange("Interface Code", pInterfaceLine."Interface Code");
             TableLinkRec.SetRange("Parent Reference Name", pInterfaceLine."Reference Name");
             if TableLinkRec.FindSet() then
@@ -123,6 +125,8 @@ codeunit 50100 "Export Invoice"
                     ParentTableFieldRef := TableReferences[TableReferenceIndex].Field(TableLinkRec."Parent Field No.");
                     ParentTableFieldRef.SetRange(LinkTableFieldRef.Value);
                 until TableLinkRec.Next() = 0;
+
+
             if TableLinkIndexes.ContainsKey(pInterfaceLine."Node Name") then
                 TableLinkIndexes.Set(pInterfaceLine."Node Name", TableReferenceIndex)
             else

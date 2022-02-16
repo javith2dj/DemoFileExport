@@ -98,7 +98,7 @@ codeunit 50101 "Interface Function Handler"
             'CountrySubentity':
                 IntFuncMgt.GetCountySubentity(gSalesHdr, gCalculatedValue);
             'IdentificationCode':
-                IntFuncMgt.GetCountySubentity(gSalesHdr, gCalculatedValue);
+                IntFuncMgt.GetIdentificationCode(gSalesHdr, gCalculatedValue);
             'CompanyID':
                 IntFuncMgt.GetCompanyID(gSalesHdr, gCalculatedValue);
             'TaxSchemeID':
@@ -180,6 +180,8 @@ codeunit 50101 "Interface Function Handler"
     var
         SalesInvHdr: Record "Sales Invoice Header";
         SalesInvLine: Record "Sales Invoice Line";
+        ServiceInvHeader: Record "Service Invoice Header";
+        ServiceInvLine: Record "Service Invoice Line";
     begin
         gFuncCode := FuncCode;
 
@@ -194,7 +196,87 @@ codeunit 50101 "Interface Function Handler"
                     Param1RecRef.SetTable(SalesInvLine);
                     gSalesLine.TransferFields(SalesInvLine);
                 end;
+            Database::"Service Invoice Header":
+                begin
+                    Param1RecRef.SetTable(ServiceInvHeader);
+                    TransferHeaderToSalesHeader(ServiceInvHeader, gSalesHdr);
+                end;
+            Database::"Service Invoice Line":
+                begin
+                    Param1RecRef.SetTable(ServiceInvLine);
+                    TransferLineToSalesLine(ServiceInvLine, gSalesLine);
+                    gSalesLine.Type := MapServiceLineTypeToSalesLineTypeEnum(ServiceInvLine.Type);
+                end;
         end
+    end;
+
+    procedure TransferHeaderToSalesHeader(FromRecord: Variant; var ToSalesHeader: Record "Sales Header")
+    var
+        ToRecord: Variant;
+    begin
+        ToRecord := ToSalesHeader;
+        RecRefTransferFields(FromRecord, ToRecord);
+        ToSalesHeader := ToRecord;
+    end;
+
+    procedure TransferLineToSalesLine(FromRecord: Variant; var ToSalesLine: Record "Sales Line")
+    var
+        ToRecord: Variant;
+    begin
+        ToRecord := ToSalesLine;
+        RecRefTransferFields(FromRecord, ToRecord);
+        ToSalesLine := ToRecord;
+    end;
+
+    procedure RecRefTransferFields(FromRecord: Variant; var ToRecord: Variant)
+    var
+        FromRecRef: RecordRef;
+        ToRecRef: RecordRef;
+        FromFieldRef: FieldRef;
+        ToFieldRef: FieldRef;
+        i: Integer;
+    begin
+        FromRecRef.GetTable(FromRecord);
+        ToRecRef.GetTable(ToRecord);
+        for i := 1 to FromRecRef.FieldCount do begin
+            FromFieldRef := FromRecRef.FieldIndex(i);
+            if ToRecRef.FieldExist(FromFieldRef.Number) then begin
+                ToFieldRef := ToRecRef.Field(FromFieldRef.Number);
+                CopyField(FromFieldRef, ToFieldRef);
+            end;
+        end;
+        ToRecRef.SetTable(ToRecord);
+    end;
+
+    local procedure CopyField(FromFieldRef: FieldRef; var ToFieldRef: FieldRef)
+    begin
+        if FromFieldRef.Class <> ToFieldRef.Class then
+            exit;
+
+        if FromFieldRef.Type <> ToFieldRef.Type then
+            exit;
+
+        if FromFieldRef.Length > ToFieldRef.Length then
+            exit;
+
+        ToFieldRef.Value := FromFieldRef.Value;
+    end;
+
+    procedure MapServiceLineTypeToSalesLineTypeEnum(ServiceLineType: Enum "Service Line Type"): Enum "Sales Line Type"
+    var
+        SalesLine: Record "Sales Line";
+        ServiceInvoiceLine: Record "Service Invoice Line";
+    begin
+        case ServiceLineType of
+            ServiceInvoiceLine.Type::" ":
+                exit(SalesLine.Type::" ");
+            ServiceInvoiceLine.Type::Item:
+                exit(SalesLine.Type::Item);
+            ServiceInvoiceLine.Type::Resource:
+                exit(SalesLine.Type::Resource);
+            else
+                exit(SalesLine.Type::"G/L Account");
+        end;
     end;
 
 }

@@ -107,8 +107,8 @@ codeunit 50102 "Interface Function Mgt."
     begin
         CompInfo.Get();
         if RespCenter.Get(SalesHeader."Responsibility Center") then
-            CalcValue := GetCountryISOCode(RespCenter.County);
-        CalcValue := GetCountryISOCode(CompInfo.County);
+            CalcValue := GetCountryISOCode(RespCenter."Country/Region Code");
+        CalcValue := GetCountryISOCode(CompInfo."Country/Region Code");
     end;
 
     procedure GetCompanyID(SalesHeader: Record "Sales Header"; var CalcValue: Text)
