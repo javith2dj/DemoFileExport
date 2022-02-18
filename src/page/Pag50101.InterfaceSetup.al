@@ -36,14 +36,13 @@ page 50101 "Interface Setup"
                     ApplicationArea = All;
                 }
             }
-            group(Mapping)
+
+            part("Interface Mapping"; "Interface Mapping ListPart")
             {
-                part("Interface Mapping"; "Interface Mapping ListPart")
-                {
-                    SubPageLink = "Interface Code" = field("Interface Code");
-                    ApplicationArea = All;
-                }
+                SubPageLink = "Interface Code" = field("Interface Code");
+                ApplicationArea = All;
             }
+
         }
     }
 

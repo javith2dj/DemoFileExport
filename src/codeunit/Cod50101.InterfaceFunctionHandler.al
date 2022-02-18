@@ -9,12 +9,14 @@ codeunit 50101 "Interface Function Handler"
     end;
 
     var
-        gRegistrationMode: Boolean;
-        gCalculatedValue: Text;
-        gFuncCode: Code[50];
-        gLineRecRef: RecordRef;
         gSalesHdr: Record "Sales Header";
         gSalesLine: Record "Sales Line";
+        gRegistrationMode: Boolean;
+        gCalculatedValue: Text;
+        gLoopRecRef: RecordRef;
+        gFuncCode: Code[50];
+        gLineRecRef: RecordRef;
+
 
     local procedure RegisterFunctions()
     var
@@ -62,8 +64,8 @@ codeunit 50101 "Interface Function Handler"
         InsertInterfaceFunctionRec('TransactionCurrencyTaxAmount', 'Get Transaction Currency Tax Amount');
         InsertInterfaceFunctionRec('Taxtotaltaxcategoryid', 'Get Tax Total Tax Category Id');
         InsertInterfaceFunctionRec('TaxExemptionReason', 'Get Tax Exemption Reason');
-        InsertInterfaceFunctionRec('taxtotaltaxschemeid', 'Get Tax Total Tax Scheme Id');
-        ;
+        InsertInterfaceFunctionRec('Taxtotaltaxschemeid', 'Get Tax Total Tax Scheme Id');
+        InsertInterfaceFunctionRec('VATAmtLineLoop', 'Get Sales Invoice Line VAT Amount Line Records');
     end;
 
     local procedure InsertInterfaceFunctionRec(FuncCode: Code[50]; Desc: Text[250])
@@ -163,6 +165,8 @@ codeunit 50101 "Interface Function Handler"
                 IntFuncMgt.GetTaxtotaltaxcategoryid(gSalesLine, gCalculatedValue);
             'TaxExemptionReason':
                 IntFuncMgt.GetTaxExemptionReason(gSalesLine, gCalculatedValue);
+            'VATAmtLineLoop':
+                IntFuncMgt.GetVATAmtLineRec(gSalesHdr, gLoopRecRef);
         end
     end;
 
@@ -174,6 +178,16 @@ codeunit 50101 "Interface Function Handler"
     procedure GetCalculatedValue(): Text
     begin
         exit(gCalculatedValue);
+    end;
+
+    procedure GetLoopRecordRef(): RecordRef
+    begin
+        exit(gLoopRecRef);
+    end;
+
+    procedure GetLoopRecordRefTableNo(): Integer
+    begin
+        exit(gLoopRecRef.Number);
     end;
 
     procedure SetGlobals(FuncCode: Code[50]; Param1RecRef: RecordRef)

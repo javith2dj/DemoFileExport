@@ -107,32 +107,8 @@ codeunit 50100 "Export Invoice"
         CurrNodeValue: Text;
     begin
         FieldRefIncrement := 1;
-        If (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Table Element") then begin
-            TableReferenceIndex += 1;
-            TableReferences[TableReferenceIndex].Open(pInterfaceLine."Table No.");
-
-
-            TableLinkRec.SetRange("Interface Code", pInterfaceLine."Interface Code");
-            TableLinkRec.SetRange("Parent Reference Name", pInterfaceLine."Reference Name");
-            if TableLinkRec.FindSet() then
-                repeat
-                    Clear(LinkTableRecordRef);
-                    Clear(LinkTableFieldRef);
-                    Clear(ParentTableFieldRef);
-                    LinkTableRecordRef.Open(TableLinkRec."Link Table No.");
-                    GetTableReferenceWithName(TableLinkRec."Link Reference Name", LinkTableRecordRef);
-                    LinkTableFieldRef := LinkTableRecordRef.Field(TableLinkRec."Link Field No.");
-                    ParentTableFieldRef := TableReferences[TableReferenceIndex].Field(TableLinkRec."Parent Field No.");
-                    ParentTableFieldRef.SetRange(LinkTableFieldRef.Value);
-                until TableLinkRec.Next() = 0;
-
-
-            if TableLinkIndexes.ContainsKey(pInterfaceLine."Node Name") then
-                TableLinkIndexes.Set(pInterfaceLine."Node Name", TableReferenceIndex)
-            else
-                TableLinkIndexes.Add(pInterfaceLine."Node Name", TableReferenceIndex);
-            ParentTableRecordRef.Open(pInterfaceLine."Table No.");
-            ParentTableRecordRef := TableReferences[TableReferenceIndex];
+        If (pInterfaceLine."Node Type" IN [pInterfaceLine."Node Type"::"Table Element", pInterfaceLine."Node Type"::"Function Element"]) then begin
+            GetTableReference(pInterfaceLine, ParentTableRecordRef);
             if ParentTableRecordRef.FindSet() then
                 repeat
                     if IntNamespace.Get(pInterfaceLine."Interface Code", pInterfaceLine.Prefix) then;
@@ -353,6 +329,59 @@ codeunit 50100 "Export Invoice"
                 if not ((AttributeValue = '') and IntLineAttributes."Not Blank") then
                     CurrNode.SetAttribute(IntLineAttributes."Attribute Key", AttributeValue);
             until IntLineAttributes.Next() = 0;
+    end;
+
+    local procedure GetTableReference(pInterfaceLine: Record "Interface Line"; var ParentTableRef: RecordRef)
+    var
+        TableLinkRec: Record "Interface Link Table";
+        FuncCodeHandler: Codeunit "Interface Function Handler";
+        ParentTableRecordRef: RecordRef;
+        LinkTableRecordRef: RecordRef;
+        CurrRecordRef: RecordRef;
+        LinkTableFieldRef: FieldRef;
+        CurrFieldRef: FieldRef;
+        ParentTableFieldRef: FieldRef;
+        HeaderFieldRef: array[10] of FieldRef;
+        FieldRefIncrement: Integer;
+    begin
+        TableReferenceIndex += 1;
+        If (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Table Element") then begin
+            FieldRefIncrement := 1;
+            TableReferences[TableReferenceIndex].Open(pInterfaceLine."Table No.");
+
+
+            TableLinkRec.SetRange("Interface Code", pInterfaceLine."Interface Code");
+            TableLinkRec.SetRange("Parent Reference Name", pInterfaceLine."Reference Name");
+            if TableLinkRec.FindSet() then
+                repeat
+                    Clear(LinkTableRecordRef);
+                    Clear(LinkTableFieldRef);
+                    Clear(ParentTableFieldRef);
+                    LinkTableRecordRef.Open(TableLinkRec."Link Table No.");
+                    GetTableReferenceWithName(TableLinkRec."Link Reference Name", LinkTableRecordRef);
+                    LinkTableFieldRef := LinkTableRecordRef.Field(TableLinkRec."Link Field No.");
+                    ParentTableFieldRef := TableReferences[TableReferenceIndex].Field(TableLinkRec."Parent Field No.");
+                    ParentTableFieldRef.SetRange(LinkTableFieldRef.Value);
+                until TableLinkRec.Next() = 0;
+        end;
+
+        IF (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Function Element") then begin
+            if pInterfaceLine."Reference Name" <> '' then begin
+                GetTableReferenceWithName(pInterfaceLine."Reference Name", CurrRecordRef);
+                FuncCodeHandler.SetGlobals(pInterfaceLine.Source, CurrRecordRef);
+            end else
+                FuncCodeHandler.SetGlobals(pInterfaceLine.Source, HeaderRecordRef);
+            FuncCodeHandler.Run();
+            TableReferences[TableReferenceIndex].Open(FuncCodeHandler.GetLoopRecordRefTableNo());
+            TableReferences[TableReferenceIndex] := FuncCodeHandler.GetLoopRecordRef();
+        end;
+
+        if TableLinkIndexes.ContainsKey(pInterfaceLine."Node Name") then
+            TableLinkIndexes.Set(pInterfaceLine."Node Name", TableReferenceIndex)
+        else
+            TableLinkIndexes.Add(pInterfaceLine."Node Name", TableReferenceIndex);
+        ParentTableRef.Open(TableReferences[TableReferenceIndex].Number);
+        ParentTableRef := TableReferences[TableReferenceIndex];
     end;
 
 }

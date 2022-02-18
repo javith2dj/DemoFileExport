@@ -640,6 +640,24 @@ codeunit 50102 "Interface Function Mgt."
         end;
     end;
 
+    procedure GetVATAmtLineRec(SalesHeader: Record "Sales Header"; var pLoopRecRef: RecordRef)
+    var
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesLine: Record "Sales Line";
+        TempVATAmtLine: Record "VAT Amount Line" temporary;
+        PEPPOLMgt: Codeunit "PEPPOL Management";
+    begin
+
+        SalesInvoiceLine.SetRange("Document No.", SalesHeader."No.");
+        if SalesInvoiceLine.FindSet() then
+            repeat
+                SalesLine.TransferFields(SalesInvoiceLine);
+                PEPPOLMgt.GetTotals(SalesLine, TempVATAmtLine);
+            until SalesInvoiceLine.Next() = 0;
+
+        pLoopRecRef.GetTable(TempVATAmtLine);
+    end;
+
     local procedure FormatVATRegistrationNo(VATRegistrationNo: Text; CountryCode: Code[10]; IsBISBilling: Boolean; IsPartyTaxScheme: Boolean): Text
     var
         CountryRegion: Record "Country/Region";

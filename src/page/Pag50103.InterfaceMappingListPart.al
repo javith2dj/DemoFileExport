@@ -78,6 +78,7 @@ page 50103 "Interface Mapping ListPart"
     {
         area(Processing)
         {
+
             action("Link Table")
             {
                 ApplicationArea = All;
@@ -112,6 +113,7 @@ page 50103 "Interface Mapping ListPart"
                 Promoted = true;
                 PromotedCategory = Process;
                 PromotedIsBig = true;
+                PromotedOnly = true;
                 Image = IndentChartOfAccounts;
 
                 trigger OnAction()
@@ -128,6 +130,7 @@ page 50103 "Interface Mapping ListPart"
                 Promoted = true;
                 PromotedCategory = Process;
                 PromotedIsBig = true;
+                PromotedOnly = true;
                 Image = Indent;
 
                 trigger OnAction()
