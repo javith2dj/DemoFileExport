@@ -3,6 +3,7 @@ table 50106 "Interface Tables"
     Caption = 'Interface Tables';
     DataClassification = ToBeClassified;
 
+
     fields
     {
         field(1; "Interface Code"; Code[30])

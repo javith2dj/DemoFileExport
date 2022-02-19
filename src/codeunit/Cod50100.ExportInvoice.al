@@ -195,6 +195,8 @@ codeunit 50100 "Export Invoice"
         CurrRecordRef.Open(InterfaceLine."Table No.");
         GetTableReferenceWithName(InterfaceLine."Reference Name", CurrRecordRef);
         CurrFieldRef := CurrRecordRef.Field(InterfaceLine."Field No.");
+        If CurrFieldRef.Class = CurrFieldRef.Class::FlowField then
+            CurrFieldRef.CalcField();
         exit(SetValue(InterfaceLine, CurrFieldRef));
     end;
 
@@ -334,6 +336,7 @@ codeunit 50100 "Export Invoice"
     local procedure GetTableReference(pInterfaceLine: Record "Interface Line"; var ParentTableRef: RecordRef)
     var
         TableLinkRec: Record "Interface Link Table";
+        TableView: Record "Interface Table View";
         FuncCodeHandler: Codeunit "Interface Function Handler";
         ParentTableRecordRef: RecordRef;
         LinkTableRecordRef: RecordRef;
@@ -349,6 +352,16 @@ codeunit 50100 "Export Invoice"
             FieldRefIncrement := 1;
             TableReferences[TableReferenceIndex].Open(pInterfaceLine."Table No.");
 
+            TableView.RESET;
+            TableView.SETRANGE("Interface Code", pInterfaceLine."Interface Code");
+            TableView.SETRANGE("Table No.", pInterfaceLine."Table No.");
+            TableView.SETFILTER("Field No.", '<> %1', 0);
+            IF TableView.FINDSET(FALSE) THEN BEGIN
+                REPEAT
+                    ParentTableFieldRef := TableReferences[TableReferenceIndex].FIELD(TableView."Field No.");
+                    ParentTableFieldRef.SETFILTER(TableView.Value);
+                UNTIL TableView.NEXT = 0;
+            END;
 
             TableLinkRec.SetRange("Interface Code", pInterfaceLine."Interface Code");
             TableLinkRec.SetRange("Parent Reference Name", pInterfaceLine."Reference Name");
@@ -363,14 +376,11 @@ codeunit 50100 "Export Invoice"
                     ParentTableFieldRef := TableReferences[TableReferenceIndex].Field(TableLinkRec."Parent Field No.");
                     ParentTableFieldRef.SetRange(LinkTableFieldRef.Value);
                 until TableLinkRec.Next() = 0;
+
         end;
 
         IF (pInterfaceLine."Node Type" = pInterfaceLine."Node Type"::"Function Element") then begin
-            if pInterfaceLine."Reference Name" <> '' then begin
-                GetTableReferenceWithName(pInterfaceLine."Reference Name", CurrRecordRef);
-                FuncCodeHandler.SetGlobals(pInterfaceLine.Source, CurrRecordRef);
-            end else
-                FuncCodeHandler.SetGlobals(pInterfaceLine.Source, HeaderRecordRef);
+            FuncCodeHandler.SetGlobals(pInterfaceLine.Source, HeaderRecordRef);
             FuncCodeHandler.Run();
             TableReferences[TableReferenceIndex].Open(FuncCodeHandler.GetLoopRecordRefTableNo());
             TableReferences[TableReferenceIndex] := FuncCodeHandler.GetLoopRecordRef();

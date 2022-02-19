@@ -1,10 +1,10 @@
-page 50107 "Interface Tables"
+page 50111 "Interface Table View"
 {
-    Caption = 'Interface Tables';
-    PageType = List;
-    SourceTable = "Interface Tables";
-    UsageCategory = Lists;
     ApplicationArea = All;
+    Caption = 'Interface Table View';
+    PageType = List;
+    SourceTable = "Interface Table View";
+    UsageCategory = Lists;
 
     layout
     {
@@ -17,9 +17,14 @@ page 50107 "Interface Tables"
                     ToolTip = 'Specifies the value of the Reference Name field.';
                     ApplicationArea = All;
                 }
-                field("Table Name"; Rec."Table Name")
+                field("Field No."; Rec."Field Name")
                 {
-                    ToolTip = 'Specifies the value of the Table Name field.';
+                    ToolTip = 'Specifies the value of the Field No. field.';
+                    ApplicationArea = All;
+                }
+                field("Value"; Rec."Value")
+                {
+                    ToolTip = 'Specifies the value of the Value field.';
                     ApplicationArea = All;
                 }
             }

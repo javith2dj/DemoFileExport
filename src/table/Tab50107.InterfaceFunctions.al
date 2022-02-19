@@ -10,6 +10,14 @@ table 50107 "Interface Functions"
         {
 
         }
+        field(3; "Return Table No."; Integer)
+        {
+
+        }
+        field(4; "Return Table Name"; Text[30])
+        {
+
+        }
     }
 
     keys

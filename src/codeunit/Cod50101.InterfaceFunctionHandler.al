@@ -65,17 +65,33 @@ codeunit 50101 "Interface Function Handler"
         InsertInterfaceFunctionRec('Taxtotaltaxcategoryid', 'Get Tax Total Tax Category Id');
         InsertInterfaceFunctionRec('TaxExemptionReason', 'Get Tax Exemption Reason');
         InsertInterfaceFunctionRec('Taxtotaltaxschemeid', 'Get Tax Total Tax Scheme Id');
-        InsertInterfaceFunctionRec('VATAmtLineLoop', 'Get Sales Invoice Line VAT Amount Line Records');
+        InsertInterfaceFunctionRec('LoadVATTotalLines', 'Get Sales Invoice Line VAT Amount Line Records');
     end;
 
     local procedure InsertInterfaceFunctionRec(FuncCode: Code[50]; Desc: Text[250])
     var
         IntFuncRec: Record "Interface Functions";
+        AllObj: Record AllObj;
     begin
         IntFuncRec.Init();
         IntFuncRec."Function Code" := FuncCode;
         IntFuncRec.Description := Desc;
+        IntFuncRec."Return Table No." := GetTableNo(FuncCode);
+        If IntFuncRec."Return Table No." <> 0 then begin
+            AllObj.Get(AllObj."Object Type"::TableData, IntFuncRec."Return Table No.");
+            IntFuncRec."Return Table Name" := AllObj."Object Name";
+        end;
         IntFuncRec.Insert();
+    end;
+
+    local procedure GetTableNo(FuncCode: Code[50]): Integer
+    begin
+        case FuncCode of
+            'LoadVATTotalLines':
+                exit(Database::"VAT Amount Line");
+            else
+                exit(0);
+        end
     end;
 
     local procedure ExecuteCode(FunctionCode: Code[50])
@@ -165,7 +181,7 @@ codeunit 50101 "Interface Function Handler"
                 IntFuncMgt.GetTaxtotaltaxcategoryid(gSalesLine, gCalculatedValue);
             'TaxExemptionReason':
                 IntFuncMgt.GetTaxExemptionReason(gSalesLine, gCalculatedValue);
-            'VATAmtLineLoop':
+            'LoadVATTotalLines':
                 IntFuncMgt.GetVATAmtLineRec(gSalesHdr, gLoopRecRef);
         end
     end;

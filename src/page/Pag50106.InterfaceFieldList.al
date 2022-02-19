@@ -4,6 +4,7 @@ page 50106 "Interface Field List"
     PageType = List;
     SourceTable = "Interface Table Fields";
     UsageCategory = Lists;
+    ApplicationArea = All;
 
     layout
     {

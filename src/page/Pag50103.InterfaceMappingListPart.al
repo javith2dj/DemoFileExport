@@ -106,6 +106,19 @@ page 50103 "Interface Mapping ListPart"
                                 "Line No." = field("Line No."),
                                 "Node Name" = field("Node Name");
             }
+            action("Table View")
+            {
+                ApplicationArea = All;
+                Caption = 'Table View';
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                Image = Line;
+                RunObject = page "Interface Table View";
+                RunPageLink = "Interface Code" = field("Interface Code"),
+                                "Reference Name" = field("Node Name"),
+                                "Table No." = field("Table No.");
+            }
             action("Right")
             {
                 ApplicationArea = All;

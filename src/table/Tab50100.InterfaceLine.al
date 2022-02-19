@@ -54,6 +54,10 @@ table 50100 "Interface Line"
                     FunctionList.Reset();
                     if Page.RunModal(Page::"Interface Function List", FunctionList) = Action::LookupOK then begin
                         Source := FunctionList."Function Code";
+                        if FunctionList."Return Table No." <> 0 then begin
+                            "Table No." := FunctionList."Return Table No.";
+                            "Reference Name" := "Node Name";
+                        end;
                     end;
                 end
             end;
@@ -186,6 +190,7 @@ table 50100 "Interface Line"
     var
         InterfaceTables: Record "Interface Tables";
         LinkFieldsRec: Record "Interface Table Fields";
+        InterfaceFunctions: Record "Interface Functions";
         FieldsRec: Record Field;
     begin
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
@@ -209,12 +214,37 @@ table 50100 "Interface Line"
                     until FieldsRec.Next() = 0;
             end;
         end;
+
+        If ("Node Type" = "Node Type"::"Function Element") and (Parent) then
+            If InterfaceFunctions.Get(Source) then begin
+                InterfaceTables.Init();
+                InterfaceTables."Interface Code" := "Interface Code";
+                InterfaceTables."Reference Name" := "Reference Name";
+                InterfaceTables."Table No" := InterfaceFunctions."Return Table No.";
+                InterfaceTables."Table Name" := InterfaceFunctions."Return Table Name";
+                if InterfaceTables.Insert() then begin
+                    FieldsRec.SetRange(TableNo, "Table No.");
+                    If FieldsRec.FindSet() then
+                        repeat
+                            LinkFieldsRec.Init();
+                            LinkFieldsRec."Interface Code" := "Interface Code";
+                            LinkFieldsRec."Reference Name" := "Reference Name";
+                            LinkFieldsRec."Table No." := FieldsRec.TableNo;
+                            LinkFieldsRec."Table Name" := FieldsRec.TableName;
+                            LinkFieldsRec."Field No." := FieldsRec."No.";
+                            LinkFieldsRec."Field Name" := FieldsRec.FieldName;
+                            LinkFieldsRec.Insert();
+                        until FieldsRec.Next() = 0;
+                end;
+            end
+
     end;
 
     trigger OnModify()
     var
         InterfaceTables: Record "Interface Tables";
         LinkFieldsRec: Record "Interface Table Fields";
+        InterfaceFunctions: Record "Interface Functions";
         FieldsRec: Record Field;
     begin
         If ("Node Type" = "Node Type"::"Table Element") and ("Table No." <> 0) then begin
@@ -238,6 +268,29 @@ table 50100 "Interface Line"
                     until FieldsRec.Next() = 0;
             end;
         end;
+
+        If ("Node Type" = "Node Type"::"Function Element") and (Parent) then
+            If InterfaceFunctions.Get(Source) and (InterfaceFunctions."Return Table No." <> 0) and ("Reference Name" <> '') then begin
+                InterfaceTables.Init();
+                InterfaceTables."Interface Code" := "Interface Code";
+                InterfaceTables."Reference Name" := "Reference Name";
+                InterfaceTables."Table No" := InterfaceFunctions."Return Table No.";
+                InterfaceTables."Table Name" := InterfaceFunctions."Return Table Name";
+                if InterfaceTables.Insert() then begin
+                    FieldsRec.SetRange(TableNo, "Table No.");
+                    If FieldsRec.FindSet() then
+                        repeat
+                            LinkFieldsRec.Init();
+                            LinkFieldsRec."Interface Code" := "Interface Code";
+                            LinkFieldsRec."Reference Name" := "Reference Name";
+                            LinkFieldsRec."Table No." := FieldsRec.TableNo;
+                            LinkFieldsRec."Table Name" := FieldsRec.TableName;
+                            LinkFieldsRec."Field No." := FieldsRec."No.";
+                            LinkFieldsRec."Field Name" := FieldsRec.FieldName;
+                            LinkFieldsRec.Insert();
+                        until FieldsRec.Next() = 0;
+                end;
+            end
     end;
 
     local procedure IsValidToUseMultiplier(): Boolean
